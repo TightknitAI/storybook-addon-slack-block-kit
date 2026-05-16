@@ -17,10 +17,7 @@ import { fileURLToPath } from 'node:url';
  */
 const here = dirname(fileURLToPath(import.meta.url));
 
-export const managerEntries = async (entry: string[] = []): Promise<string[]> => [
-  ...entry,
-  join(here, 'manager.js')
-];
+export const managerEntries = async (entry: string[] = []): Promise<string[]> => [...entry, join(here, 'manager.js')];
 
 export const previewAnnotations = async (entry: string[] = []): Promise<string[]> => [
   ...entry,

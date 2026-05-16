@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/TightknitAI/storybook-addon-slack-block-kit/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Block Kit builder UI
+    url: https://github.com/TightknitAI/block-kit-builder
+    about: Questions about the drag-and-drop builder belong in the block-kit-builder repo.

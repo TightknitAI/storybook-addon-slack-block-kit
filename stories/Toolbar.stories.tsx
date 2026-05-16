@@ -6,9 +6,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
  * below and toggle the toolbar — the preview should flip without a reload.
  */
 function HostNote({ note }: { note: string }) {
-  return (
-    <p style={{ fontFamily: 'system-ui, sans-serif', color: '#374151', maxWidth: 480 }}>{note}</p>
-  );
+  return <p style={{ fontFamily: 'system-ui, sans-serif', color: '#374151', maxWidth: 480 }}>{note}</p>;
 }
 
 const meta = {

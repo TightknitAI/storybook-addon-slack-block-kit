@@ -13,10 +13,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const SRC = join(here, '..', 'src');
 
-export const managerEntries = async (entry: string[] = []): Promise<string[]> => [
-  ...entry,
-  join(SRC, 'manager.tsx')
-];
+export const managerEntries = async (entry: string[] = []): Promise<string[]> => [...entry, join(SRC, 'manager.tsx')];
 
 export const previewAnnotations = async (entry: string[] = []): Promise<string[]> => [
   ...entry,

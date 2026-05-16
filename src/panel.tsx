@@ -38,7 +38,7 @@ export function Panel() {
             lineHeight: 1.5
           }}
         >
-{`export const MyStory = {
+          {`export const MyStory = {
   parameters: {
     slackBlocks: [
       { type: 'section', text: { type: 'mrkdwn', text: '*hi from Slack*' } }
@@ -55,12 +55,11 @@ export function Panel() {
   return (
     <div style={{ padding: 16, fontFamily: 'inherit' }}>
       <p style={{ margin: 0 }}>
-        Story declares <strong>{blockCount}</strong> Slack {blockCount === 1 ? 'block' : 'blocks'}.
-        The preview is rendered inline by the decorator (below the story body).
+        Story declares <strong>{blockCount}</strong> Slack {blockCount === 1 ? 'block' : 'blocks'}. The preview is
+        rendered inline by the decorator (below the story body).
       </p>
       <p style={{ marginTop: 12, fontSize: 12, color: 'var(--colors-secondary, #555)' }}>
-        Toolbar globals <code>Slack theme</code> and <code>Slack surface</code> flip the inline
-        preview live.
+        Toolbar globals <code>Slack theme</code> and <code>Slack surface</code> flip the inline preview live.
       </p>
     </div>
   );
