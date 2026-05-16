@@ -7,7 +7,7 @@ A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would. Drop
 ## What you get (v0)
 
 - ✅ **Decorator** — every story whose `parameters.slackBlocks` is set gets a Slack-rendered preview below it.
-- ✅ **Toolbar globals** — `Slack theme` (light / dark) and `Slack surface` (message / modal / app home) dropdowns flip every preview at once.
+- ✅ **Toolbar globals** — `Slack theme` (light / dark) and `Slack surface` (message / modal) dropdowns flip every preview at once. Blocks always render inside a real Slack surface — message envelope or modal chrome — so you can see how they'll actually look.
 - ✅ **Standalone renderer / MDX doc block** — `<SlackPreview blocks={...} />` exported for use in your own MDX or React tests.
 - ⚠ **Addon panel** — registered, but stubbed in v0. The decorator renders inline; the panel reports the block count. The full panel rendering is the v1 priority (see [AGENTS.md](./AGENTS.md)).
 

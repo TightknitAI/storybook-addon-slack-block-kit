@@ -12,7 +12,7 @@ Read this before doing anything destructive. The user scaffolded this repo in a 
 |---|---|---|
 | Decorator (`withSlackPreview`) | ✅ working | Preview-side. Renders below the story when `parameters.slackBlocks` is set. |
 | Toolbar globals (theme + surface) | ✅ working | Wired via `preview.ts`'s `globalTypes`. |
-| Renderer (`Renderer`) | ✅ working | Surface chrome for message / modal / app_home. |
+| Renderer (`Renderer`) | ✅ working | Blocks always render inside a real surface — `message` (full envelope: avatar / name / timestamp) or `modal` (title bar + Cancel/Submit footer). No bare option. |
 | MDX doc block (`<SlackPreview>`) | ⚠ shipped, **dogfood disabled** | Exported from the package and usable in consumer MDX, but Storybook's `@storybook/addon-docs` MDX preprocessor can't resolve `slack-blocks-to-jsx`'s transitive `emojilib` dep. Consumers may hit the same issue depending on their build. See "Known risks → MDX preprocessor". |
 | Addon panel | ⚠ stubbed | Registered, but shows an info message instead of rendering the preview. Manager-side esbuild bundle can't resolve `emojilib`. The decorator covers the same need inline. See "Known risks → Manager-side rendering". |
 
