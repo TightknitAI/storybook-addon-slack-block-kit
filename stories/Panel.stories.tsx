@@ -17,8 +17,7 @@ function HostInstructions() {
         borderRadius: 8
       }}
     >
-      <strong>Look at the "Slack preview" addon panel</strong> — the preview is rendered there only,
-      not inline.
+      <strong>Look at the "Slack preview" addon panel</strong> — the preview is rendered there only, not inline.
     </div>
   );
 }

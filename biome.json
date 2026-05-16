@@ -41,6 +41,6 @@
     }
   },
   "files": {
-    "includes": ["src/**", "stories/**", ".storybook/**", "*.ts", "*.tsx", "*.json"]
+    "includes": ["src/**", "stories/**", "test/**", ".storybook/**", "*.ts", "*.tsx", "*.json"]
   }
 }

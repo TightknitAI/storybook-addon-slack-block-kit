@@ -1,12 +1,7 @@
 import type { Decorator } from '@storybook/react-vite';
 import { GLOBAL_SURFACE_KEY, GLOBAL_THEME_KEY, PARAM_KEY } from './constants';
 import { Renderer } from './renderer';
-import type {
-  SlackBlocksParameter,
-  SlackBlocksParameterObject,
-  SlackPreviewSurface,
-  SlackPreviewTheme
-} from './types';
+import type { SlackBlocksParameter, SlackBlocksParameterObject, SlackPreviewSurface, SlackPreviewTheme } from './types';
 
 function normalize(param: SlackBlocksParameter | undefined | null): SlackBlocksParameterObject | null {
   if (!param) return null;
@@ -38,8 +33,7 @@ export const withSlackPreview: Decorator = (StoryFn, context) => {
   const theme: SlackPreviewTheme =
     param.theme ?? ((globals?.[GLOBAL_THEME_KEY] as SlackPreviewTheme | undefined) || 'light');
   const surface: SlackPreviewSurface =
-    param.surface ??
-    ((globals?.[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) || 'message');
+    param.surface ?? ((globals?.[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) || 'message');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
