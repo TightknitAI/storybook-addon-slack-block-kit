@@ -54,6 +54,7 @@
     "prepublishOnly": "pnpm run build:clean && pnpm test"
   },
   "dependencies": {
+    "@tightknitai/slack-block-kit-validator": "0.1.0-alpha.0",
     "slack-blocks-to-jsx": "^1.0.4"
   },
   "peerDependencies": {

@@ -1,17 +1,22 @@
 # @tightknitai/storybook-addon-slack-block-kit
 
-A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would. Drop it into any React Storybook to give Slack-targeted components a faithful side-by-side preview.
+A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would, validates it against the official rule set, and lets you simulate interactions — all inline with your stories.
 
 > **Status: alpha (v0).** Scaffolded but not yet smoke-tested against a fresh consumer project. See [AGENTS.md](./AGENTS.md) for the current state and known risks before publishing.
 
-## What you get (v0)
+## What you get
 
 - ✅ **Decorator** — every story whose `parameters.slackBlocks` is set gets a Slack-rendered preview below it.
-- ✅ **Toolbar globals** — `Slack theme` (light / dark) and `Slack surface` (message / modal) dropdowns flip every preview at once. Blocks always render inside a real Slack surface — message envelope or modal chrome — so you can see how they'll actually look.
-- ✅ **Standalone renderer / MDX doc block** — `<SlackPreview blocks={...} />` exported for use in your own MDX or React tests.
-- ⚠ **Addon panel** — registered, but stubbed in v0. The decorator renders inline; the panel reports the block count. The full panel rendering is the v1 priority (see [AGENTS.md](./AGENTS.md)).
+- ✅ **Three surfaces** — toolbar globals flip every preview between **Message**, **Modal**, and **App Home** chrome. Blocks always render inside a real Slack surface, so you can see how they'll actually look.
+- ✅ **Live validation** — every preview runs through [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). Errors show up inline above the preview and in the addon panel, so you catch malformed payloads at story-time instead of in production.
+- ✅ **Interaction simulator** — buttons, selects, datepickers etc. are listed below every preview with a "Simulate" action that fires a payload identical to what Slack would POST to your interactivity endpoint.
+- ✅ **Args-driven blocks** — pass a function for `parameters.slackBlocks` to derive blocks from story args, so Storybook Controls drive the preview live.
+- ✅ **Open in Block Kit Builder** — one-click handoff to Slack's hosted editor with the payload preloaded.
+- ✅ **Copy as JSON** — grab the rendered payload to paste into Postman, a webhook test, or a `chat.postMessage` call.
+- ✅ **MDX doc block** — `<SlackPreview blocks={...} />` for use in your own MDX pages or React tests.
+- ⚠ **Addon panel** — renders the validation report + JSON/Builder controls; does NOT render the Slack preview itself (the decorator does that inline). See [AGENTS.md](./AGENTS.md) → "Known risks → Manager-side rendering".
 
-Rendering is delegated to [`slack-blocks-to-jsx`](https://www.npmjs.com/package/slack-blocks-to-jsx) — no custom renderer, no fork. The addon is a thin Storybook wrapper around that library.
+Rendering is delegated to [`slack-blocks-to-jsx`](https://www.npmjs.com/package/slack-blocks-to-jsx); validation to [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). The addon is a thin Storybook wrapper around them.
 
 ## Install
 
@@ -35,7 +40,7 @@ export default config;
 
 ## Use
 
-### Story parameter
+### Bare blocks
 
 ```tsx
 import type { Meta, StoryObj } from '@storybook/react-vite';
@@ -64,19 +69,71 @@ export const SectionAndButton: StoryObj<typeof meta> = {
 };
 ```
 
-Or pass the object form for per-story overrides:
+### Object form (per-story overrides + interactions)
 
 ```tsx
 parameters: {
   slackBlocks: {
     blocks: [/* ... */],
     theme: 'dark',          // override toolbar global
-    surface: 'modal',       // override toolbar global
-    hooks: { /* user/channel/emoji hooks */ },
-    layout: 'panel-only'    // hide inline preview; only addon panel renders it
+    surface: 'modal',       // 'message' | 'modal' | 'home'
+    hooks: { /* user/channel/emoji hooks — see below */ },
+    layout: 'panel-only',   // hide inline preview; only addon panel renders it
+    validate: false,        // disable the validation banner
+    onInteraction: (payload) => {
+      // fires when the user clicks Simulate on a button/select/etc.
+      // payload mirrors Slack's interactivity POST body
+      console.log(payload);
+    }
   }
 }
 ```
+
+### Args-driven (function form)
+
+For designers who want to tweak text/labels/options through Storybook Controls:
+
+```tsx
+const meta = {
+  args: { title: 'Deploy ready', body: '_All green._', buttonLabel: 'Deploy' },
+  parameters: {
+    slackBlocks: (args) => [
+      { type: 'header', text: { type: 'plain_text', text: args.title, emoji: true } },
+      { type: 'section', text: { type: 'mrkdwn', text: args.body } },
+      {
+        type: 'actions',
+        elements: [
+          {
+            type: 'button',
+            text: { type: 'plain_text', text: args.buttonLabel, emoji: true },
+            action_id: 'deploy'
+          }
+        ]
+      }
+    ]
+  }
+} satisfies Meta<typeof MyComponent>;
+```
+
+### `hooks` examples
+
+Slack references users/channels/emoji by ID on the wire (`<@U123>`, `<#C456>`, `:sparkles:`). The renderer surfaces those as hook calls so you can resolve them against your own directory before display:
+
+```tsx
+parameters: {
+  slackBlocks: {
+    blocks: [/* rich_text with a user/channel/emoji */],
+    hooks: {
+      user: ({ user_id }) => <UserChip id={user_id} />,
+      channel: ({ channel_id }) => <ChannelChip id={channel_id} />,
+      emoji: ({ name }, parseFallback) =>
+        name === 'sparkles' ? <CustomSparkles /> : parseFallback({ name })
+    }
+  }
+}
+```
+
+The full hook shape is defined upstream in [`slack-blocks-to-jsx`'s `Hooks` type](https://www.npmjs.com/package/slack-blocks-to-jsx).
 
 ### MDX doc block
 
@@ -85,6 +142,7 @@ import { SlackPreview } from '@tightknitai/storybook-addon-slack-block-kit';
 
 <SlackPreview
   blocks={[{ type: 'section', text: { type: 'mrkdwn', text: '*hi*' } }]}
+  surface="home"
 />
 ```
 
@@ -96,6 +154,22 @@ import { Renderer } from '@tightknitai/storybook-addon-slack-block-kit';
 <Renderer blocks={blocks} theme="light" surface="message" />
 ```
 
+### Standalone helpers
+
+The validator and Block Kit Builder URL helpers are re-exported, so consumers can reuse them in tests or in their own tooling:
+
+```tsx
+import {
+  validateForSurface,
+  buildBlockKitBuilderUrl,
+  extractInteractions
+} from '@tightknitai/storybook-addon-slack-block-kit';
+
+// In a unit test next to your block builder:
+const { valid, errors } = validateForSurface(buildBlocks(input), 'message');
+expect(valid).toBe(true);
+```
+
 ## Develop
 
 ```bash
@@ -104,13 +178,15 @@ pnpm storybook    # dogfood: opens this repo's own stories at :6007
 pnpm build        # tsup → dist/ (index, preview, manager, preset)
 pnpm typecheck
 pnpm lint
+pnpm test
 ```
 
 `.storybook/local-preset.ts` wires the addon source directly so changes hot-reload without rebuilding.
 
 ## See also
 
-- [`@tightknitai/block-kit-builder`](https://github.com/TightknitAI/block-kit-builder) — drag-and-drop visual builder that ships the same `SlackBlockPreview` renderer the addon mirrors.
+- [`@tightknitai/slack-block-kit-validator`](https://github.com/TightknitAI/slack-block-kit-validator) — the JSON Schema + caveat helpers that power the validation banner.
+- [`@tightknitai/block-kitchen`](https://github.com/TightknitAI/block-kitchen) — drag-and-drop visual builder that ships the same `SlackBlockPreview` renderer the addon mirrors.
 
 ## License
 

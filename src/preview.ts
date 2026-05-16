@@ -31,7 +31,8 @@ export const globalTypes = {
       icon: 'mobile',
       items: [
         { value: 'message', title: 'Message' },
-        { value: 'modal', title: 'Modal' }
+        { value: 'modal', title: 'Modal' },
+        { value: 'home', title: 'App Home' }
       ],
       dynamicTitle: true
     }

@@ -10,11 +10,15 @@ Read this before doing anything destructive. The user scaffolded this repo in a 
 
 | Feature | Status | Notes |
 |---|---|---|
-| Decorator (`withSlackPreview`) | ✅ working | Preview-side. Renders below the story when `parameters.slackBlocks` is set. |
-| Toolbar globals (theme + surface) | ✅ working | Wired via `preview.ts`'s `globalTypes`. |
-| Renderer (`Renderer`) | ✅ working | Blocks always render inside a real surface — `message` (full envelope: avatar / name / timestamp) or `modal` (title bar + Cancel/Submit footer). No bare option. |
+| Decorator (`withSlackPreview`) | ✅ working | Preview-side. Renders below the story when `parameters.slackBlocks` is set, or derives blocks from a function form / `args.blocks`. |
+| Toolbar globals (theme + surface) | ✅ working | Wired via `preview.ts`'s `globalTypes`. Surface dropdown covers `Message`, `Modal`, and `App Home`. |
+| Renderer (`Renderer`) | ✅ working | Blocks always render inside a real surface — `message` (full envelope: avatar / name / timestamp), `modal` (title bar + Cancel/Submit footer), or `home` (Home / Messages / About tab strip). No bare option. |
+| Validation banner + panel report | ✅ working | Wraps `@tightknitai/slack-block-kit-validator`. Inline green/red banner above the preview; full structured report in the addon panel. The validator has no transitive `emojilib` dep, so the panel runs fine manager-side. |
+| Interaction simulator | ✅ working | `src/interactions.ts` walks the blocks for interactive elements; the chrome renders a "Simulate" button per element that fires `parameters.slackBlocks.onInteraction(payload)` and logs to the console. |
+| Args-driven blocks | ✅ working | `parameters.slackBlocks` accepts a function `(args) => Block[] \| { blocks, ... }` so Storybook Controls drive the preview live. |
+| Copy as JSON / Open in Block Kit Builder | ✅ working | Top-right of every preview and in the panel. The Builder URL wraps the payload in the correct surface envelope (`{type:'modal',blocks}`, `{type:'home',blocks}`, or bare `{blocks}`). |
 | MDX doc block (`<SlackPreview>`) | ⚠ shipped, **dogfood disabled** | Exported from the package and usable in consumer MDX, but Storybook's `@storybook/addon-docs` MDX preprocessor can't resolve `slack-blocks-to-jsx`'s transitive `emojilib` dep. Consumers may hit the same issue depending on their build. See "Known risks → MDX preprocessor". |
-| Addon panel | ⚠ stubbed | Registered, but shows an info message instead of rendering the preview. Manager-side esbuild bundle can't resolve `emojilib`. The decorator covers the same need inline. See "Known risks → Manager-side rendering". |
+| Addon panel renders the live preview | ⚠ stubbed | The panel shows the validation report, surface, JSON/Builder controls, and block count — but does NOT render the Slack preview itself. Manager-side esbuild bundle can't resolve `emojilib` (transitive through `slack-blocks-to-jsx`). The decorator covers the live preview inline. See "Known risks → Manager-side rendering". |
 
 ## Verified locally
 
@@ -122,10 +126,14 @@ storybook-addon-slack-block-kit/
 ├── src/
 │   ├── constants.ts                ← ADDON_ID, PANEL_ID, PARAM_KEY, GLOBAL_* keys
 │   ├── globals.d.ts                ← ambient `declare module '*.css'`
-│   ├── types.ts                    ← SlackPreview{Theme,Surface,Props}, SlackBlocksParameter
+│   ├── types.ts                    ← SlackPreview{Theme,Surface,Props}, SlackBlocksParameter, SlackInteractionPayload
 │   ├── renderer.tsx                ← Renderer — Slack-styled wrapper around slack-blocks-to-jsx
-│   ├── decorator.tsx               ← withSlackPreview — preview-side story decorator
-│   ├── panel.tsx                   ← Panel — STUBBED for v0, see Known risks #1
+│   ├── preview-chrome.tsx          ← PreviewToolbar / ValidationBanner / InteractionsPanel (factored out for reuse + testability)
+│   ├── validate.ts                 ← validateForSurface — surface→target adapter over @tightknitai/slack-block-kit-validator
+│   ├── builder-url.ts              ← buildBlockKitBuilderUrl — wraps blocks in the surface-appropriate envelope and URL-encodes
+│   ├── interactions.ts             ← extractInteractions — walks blocks for interactive elements (buttons/selects/etc.)
+│   ├── decorator.tsx               ← withSlackPreview — preview-side story decorator (supports bare/object/function param forms)
+│   ├── panel.tsx                   ← Panel — validation report + JSON/Builder controls (preview itself is still stubbed; see #1)
 │   ├── blocks.tsx                  ← SlackPreview — MDX doc block (re-exports Renderer)
 │   ├── manager.tsx                 ← addons.register + addons.add panel
 │   ├── preview.ts                  ← decorators + globalTypes + initialGlobals
@@ -135,6 +143,11 @@ storybook-addon-slack-block-kit/
     ├── Decorator.stories.tsx       ← 4 stories incl. dark-pinned + no-blocks empty state
     ├── Toolbar.stories.tsx         ← toolbar globals demo
     ├── Panel.stories.tsx           ← layout: panel-only
+    ├── Hooks.stories.tsx           ← user/channel/emoji hook examples
+    ├── ArgsDriven.stories.tsx      ← function-form parameter driving blocks from Controls
+    ├── AppHome.stories.tsx         ← `home` surface with the tab-strip chrome
+    ├── Validation.stories.tsx      ← valid + intentionally-invalid fixtures for the banner
+    ├── Interactions.stories.tsx    ← buttons + select with onInteraction wired
     └── DocBlock.mdx                ← PRESERVED but excluded from dogfood discovery
 ```
 

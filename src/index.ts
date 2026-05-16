@@ -9,6 +9,7 @@
  *   addons: ['@tightknitai/storybook-addon-slack-block-kit']
  */
 export { SlackPreview } from './blocks';
+export { buildBlockKitBuilderUrl } from './builder-url';
 export {
   ADDON_ID,
   GLOBAL_SURFACE_KEY,
@@ -17,13 +18,17 @@ export {
   PARAM_KEY
 } from './constants';
 export { withSlackPreview } from './decorator';
+export { extractInteractions } from './interactions';
 export type { RendererProps } from './renderer';
 export { Renderer } from './renderer';
 export type {
   SlackBlocksParameter,
   SlackBlocksParameterObject,
+  SlackInteractionPayload,
   SlackPreviewHooks,
   SlackPreviewProps,
   SlackPreviewSurface,
-  SlackPreviewTheme
+  SlackPreviewTheme,
+  ValidationResult
 } from './types';
+export { validateForSurface } from './validate';
