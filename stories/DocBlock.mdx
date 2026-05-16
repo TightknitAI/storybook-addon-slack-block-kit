@@ -1,0 +1,57 @@
+import { Meta } from '@storybook/addon-docs/blocks';
+import { SlackPreview } from '../src/blocks';
+
+<Meta title="Addon/DocBlock (MDX)" />
+
+# `<SlackPreview>` MDX doc block
+
+Embed live Slack-style previews directly in MDX docs. The component takes the
+same arguments as the renderer: `blocks`, `theme`, `surface`, `hooks`.
+
+## A simple section
+
+<SlackPreview
+  blocks={[
+    {
+      type: 'section',
+      text: { type: 'mrkdwn', text: '*Hello* from an MDX doc page.' }
+    }
+  ]}
+/>
+
+## Dark theme
+
+<SlackPreview
+  theme="dark"
+  blocks={[
+    { type: 'header', text: { type: 'plain_text', text: 'Dark example', emoji: true } },
+    {
+      type: 'section',
+      text: {
+        type: 'mrkdwn',
+        text: 'Pin the theme on a per-instance basis without touching globals.'
+      }
+    }
+  ]}
+/>
+
+## Modal surface
+
+<SlackPreview
+  surface="modal"
+  blocks={[
+    {
+      type: 'section',
+      text: { type: 'mrkdwn', text: 'Wrapped in modal chrome (title + Cancel/Submit footer).' }
+    },
+    {
+      type: 'input',
+      label: { type: 'plain_text', text: 'Email', emoji: true },
+      element: {
+        type: 'email_text_input',
+        action_id: 'email',
+        placeholder: { type: 'plain_text', text: 'name@example.com', emoji: true }
+      }
+    }
+  ]}
+/>

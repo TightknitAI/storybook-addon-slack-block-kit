@@ -1,0 +1,56 @@
+import type { Block } from 'slack-blocks-to-jsx';
+
+/**
+ * Light or dark theme for the rendered Slack preview.
+ * Mirrors `slack-blocks-to-jsx`'s `theme` prop and its `data-theme`
+ * CSS scoping.
+ */
+export type SlackPreviewTheme = 'light' | 'dark';
+
+/**
+ * Which Slack surface chrome to wrap the rendered blocks in. Affects
+ * the framing around the message (modal header/footer, app home tabs);
+ * `message` renders the blocks bare.
+ */
+export type SlackPreviewSurface = 'message' | 'modal' | 'app_home';
+
+/**
+ * Hooks forwarded to `slack-blocks-to-jsx`'s `<Message>` so consumers can
+ * resolve user / channel / emoji / link directives to their own UI. See
+ * the upstream library for the full hook shape; typed as `unknown`-keyed
+ * here to avoid leaking upstream internals into the addon's public API.
+ */
+export type SlackPreviewHooks = Record<string, unknown>;
+
+/**
+ * Object form of the `slackBlocks` story parameter. Lets a story override
+ * theme / surface / hooks without touching globals, and pick a layout for
+ * where the preview should render.
+ *
+ * `layout` values:
+ *  - `below` (default): renders the preview below the story content
+ *  - `panel-only`: hides the inline preview; only the addon panel shows it
+ */
+export interface SlackBlocksParameterObject {
+  blocks: Block[];
+  theme?: SlackPreviewTheme;
+  surface?: SlackPreviewSurface;
+  hooks?: SlackPreviewHooks;
+  layout?: 'below' | 'panel-only';
+}
+
+/**
+ * Story parameter shape. Accepts either a bare `Block[]` (most common) or
+ * the object form above for finer control.
+ */
+export type SlackBlocksParameter = Block[] | SlackBlocksParameterObject;
+
+/**
+ * Props for the public `<SlackPreview>` component (the MDX doc block).
+ */
+export interface SlackPreviewProps {
+  blocks: Block[];
+  theme?: SlackPreviewTheme;
+  surface?: SlackPreviewSurface;
+  hooks?: SlackPreviewHooks;
+}
