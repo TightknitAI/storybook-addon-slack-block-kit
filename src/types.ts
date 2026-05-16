@@ -8,11 +8,14 @@ import type { Block } from 'slack-blocks-to-jsx';
 export type SlackPreviewTheme = 'light' | 'dark';
 
 /**
- * Which Slack surface chrome to wrap the rendered blocks in. Affects
- * the framing around the message (modal header/footer, app home tabs);
- * `message` renders the blocks bare.
+ * Which Slack surface to render the blocks inside. Blocks always render
+ * inside one of these — there is no "bare" option, because seeing the
+ * surrounding chrome is the whole point of the preview:
+ *  - `message`: a real Slack channel message envelope (avatar, app name,
+ *    timestamp, channel-style card)
+ *  - `modal`: Slack's modal chrome (title bar + Cancel/Submit footer)
  */
-export type SlackPreviewSurface = 'message' | 'modal' | 'app_home';
+export type SlackPreviewSurface = 'message' | 'modal';
 
 /**
  * Hooks forwarded to `slack-blocks-to-jsx`'s `<Message>` so consumers can
