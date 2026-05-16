@@ -41,9 +41,11 @@ export interface SlackBlocksParameterObject {
 
 /**
  * Story parameter shape. Accepts either a bare `Block[]` (most common) or
- * the object form above for finer control.
+ * the object form above for finer control. Pass `false` to opt the story
+ * out of the decorator entirely — useful for showcase stories whose
+ * component already renders a Slack preview (e.g. SlackPreview itself).
  */
-export type SlackBlocksParameter = Block[] | SlackBlocksParameterObject;
+export type SlackBlocksParameter = Block[] | SlackBlocksParameterObject | false;
 
 /**
  * Props for the public `<SlackPreview>` component (the MDX doc block).

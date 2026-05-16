@@ -1,12 +1,7 @@
 import type { Decorator } from '@storybook/react-vite';
 import { GLOBAL_SURFACE_KEY, GLOBAL_THEME_KEY, PARAM_KEY } from './constants';
 import { Renderer } from './renderer';
-import type {
-  SlackBlocksParameter,
-  SlackBlocksParameterObject,
-  SlackPreviewSurface,
-  SlackPreviewTheme
-} from './types';
+import type { SlackBlocksParameter, SlackBlocksParameterObject, SlackPreviewSurface, SlackPreviewTheme } from './types';
 
 function normalize(param: SlackBlocksParameter | undefined | null): SlackBlocksParameterObject | null {
   if (!param) return null;
@@ -25,11 +20,15 @@ function normalize(param: SlackBlocksParameter | undefined | null): SlackBlocksP
  * story at once.
  */
 export const withSlackPreview: Decorator = (StoryFn, context) => {
-  const raw = (context.parameters?.[PARAM_KEY] ?? null) as SlackBlocksParameter | null;
+  const raw = context.parameters?.[PARAM_KEY] as SlackBlocksParameter | null | undefined;
+  // Explicit opt-out: `parameters.slackBlocks = false`. Suppresses the
+  // args.blocks fallback below so showcase stories whose component already
+  // renders a Slack preview (e.g. SlackPreview itself) don't double up.
+  if (raw === false) return <StoryFn />;
   const argBlocks = (context.args as { blocks?: unknown } | undefined)?.blocks;
   const fromArgs = Array.isArray(argBlocks) ? (argBlocks as SlackBlocksParameter) : undefined;
 
-  const param = normalize(raw) ?? normalize(fromArgs);
+  const param = normalize(raw ?? null) ?? normalize(fromArgs);
   if (!param) return <StoryFn />;
 
   if (param.layout === 'panel-only') return <StoryFn />;
@@ -38,8 +37,7 @@ export const withSlackPreview: Decorator = (StoryFn, context) => {
   const theme: SlackPreviewTheme =
     param.theme ?? ((globals?.[GLOBAL_THEME_KEY] as SlackPreviewTheme | undefined) || 'light');
   const surface: SlackPreviewSurface =
-    param.surface ??
-    ((globals?.[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) || 'message');
+    param.surface ?? ((globals?.[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) || 'message');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

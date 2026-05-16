@@ -13,6 +13,10 @@ A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would. Drop
 
 Rendering is delegated to [`slack-blocks-to-jsx`](https://www.npmjs.com/package/slack-blocks-to-jsx) — no custom renderer, no fork. The addon is a thin Storybook wrapper around that library.
 
+### Block catalog
+
+The dogfood Storybook ships a `Slack Blocks` story group with one example per block type the renderer supports — the 14 blocks `@tightknitai/block-kit-builder` catalogs (`section`, `header`, `divider`, `context`, `actions`, `image`, `markdown`, `rich_text`, `table`, `alert`, `card`, `carousel`, `context_actions`, `input`) plus the four extra ones `slack-blocks-to-jsx` ships out of the box (`file`, `video`, `plan`, `task_card`). See [stories/Blocks.stories.tsx](stories/Blocks.stories.tsx).
+
 ## Install
 
 ```bash
