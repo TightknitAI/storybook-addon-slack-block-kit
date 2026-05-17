@@ -47,6 +47,7 @@
     "test:coverage": "vitest run --coverage",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
+    "deploy": "pnpm run build-storybook && wrangler deploy",
     "lint": "biome check .",
     "lint:fix": "biome check --fix .",
     "format": "biome format --write .",
@@ -78,7 +79,8 @@
     "tsup": "^8.3.5",
     "typescript": "^6.0.3",
     "vite": "^8.0.13",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.6",
+    "wrangler": "^4.0.0"
   },
   "repository": {
     "type": "git",
