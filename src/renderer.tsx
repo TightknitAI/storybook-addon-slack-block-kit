@@ -41,6 +41,14 @@ const COLORS = {
 
 const FONT_STACK = "Lato, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
+// Per-surface widths match Slack's actual rendering: message column ~600,
+// modal dialog ~520, App Home tab ~660.
+const SURFACE_WIDTH: Record<SlackPreviewSurface, number> = {
+  message: 600,
+  modal: 520,
+  home: 660
+};
+
 const DEFAULT_NAME = 'Storybook App';
 
 // Inline Slack-aubergine avatar so the message envelope renders cleanly
@@ -105,7 +113,7 @@ export function Renderer({
   const interactions = useMemo(() => extractInteractions(blocks), [blocks]);
 
   const chrome = (body: React.ReactNode) => (
-    <div style={{ fontFamily: FONT_STACK, maxWidth: 600 }}>
+    <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] }}>
       <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} />
       {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
       {body}
