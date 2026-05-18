@@ -6,9 +6,6 @@
   // outputs the built Storybook to `storybook-static/`, which is the demo.
   // Custom domain (e.g. block-kit-storybook.tightknit.dev) is attached in the
   // Cloudflare dashboard under Workers → Routes / Custom Domains.
-  "build": {
-    "command": "pnpm run build-storybook"
-  },
   "assets": {
     "directory": "./storybook-static",
     "not_found_handling": "404-page"
