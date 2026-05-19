@@ -148,9 +148,11 @@ interface InteractionsProps {
  * `slack-blocks-to-jsx` does not implement (it's a pure renderer).
  */
 export function InteractionsPanel({ interactions, onInteraction, colors, fontFamily }: InteractionsProps) {
+  const [firedIdx, setFiredIdx] = useState<number | null>(null);
+
   if (interactions.length === 0) return null;
 
-  const onClick = (p: SlackInteractionPayload) => () => {
+  const onClick = (p: SlackInteractionPayload, idx: number) => () => {
     try {
       onInteraction?.(p);
     } finally {
@@ -158,6 +160,10 @@ export function InteractionsPanel({ interactions, onInteraction, colors, fontFam
       // that consumers can copy/paste into a real handler test.
       // eslint-disable-next-line no-console
       console.log('[slack-block-kit] interaction', p);
+      setFiredIdx(idx);
+      setTimeout(() => {
+        setFiredIdx((current) => (current === idx ? null : current));
+      }, 1500);
     }
   };
 
@@ -175,35 +181,40 @@ export function InteractionsPanel({ interactions, onInteraction, colors, fontFam
     >
       <div style={{ fontWeight: 600, marginBottom: 6, color: colors.text }}>Interactions</div>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 4 }}>
-        {interactions.map((i, idx) => (
-          <li
-            key={`${i.action_id ?? 'noid'}-${idx}`}
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
-          >
-            <code style={{ color: colors.text }}>
-              {i.type}
-              {i.action_id ? ` · action_id="${i.action_id}"` : ''}
-              {i.value ? ` · value="${i.value}"` : ''}
-              {i.label ? ` · "${i.label}"` : ''}
-            </code>
-            <button
-              type="button"
-              onClick={onClick(i)}
-              style={{
-                padding: '2px 8px',
-                borderRadius: 4,
-                border: `1px solid ${colors.border}`,
-                background: 'transparent',
-                color: colors.accent,
-                cursor: 'pointer',
-                fontFamily,
-                fontSize: 12
-              }}
+        {interactions.map((i, idx) => {
+          const fired = firedIdx === idx;
+          return (
+            <li
+              key={`${i.action_id ?? 'noid'}-${idx}`}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}
             >
-              Simulate
-            </button>
-          </li>
-        ))}
+              <code style={{ color: colors.text }}>
+                {i.type}
+                {i.action_id ? ` · action_id="${i.action_id}"` : ''}
+                {i.value ? ` · value="${i.value}"` : ''}
+                {i.label ? ` · "${i.label}"` : ''}
+              </code>
+              <button
+                type="button"
+                onClick={onClick(i, idx)}
+                aria-live="polite"
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  border: `1px solid ${fired ? '#b6e2c4' : colors.border}`,
+                  background: fired ? '#e6f6ec' : 'transparent',
+                  color: fired ? '#0a6c2d' : colors.accent,
+                  cursor: 'pointer',
+                  fontFamily,
+                  fontSize: 12,
+                  transition: 'background 120ms ease, color 120ms ease, border-color 120ms ease'
+                }}
+              >
+                {fired ? 'Fired ✓' : 'Simulate'}
+              </button>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
