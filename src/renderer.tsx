@@ -39,6 +39,15 @@ const COLORS = {
   }
 } as const;
 
+// Workbench backdrop the rendered surface sits on. Slightly off the
+// Storybook page color with a faint dot grid so the message envelope /
+// modal / home reads as the artifact being previewed, not part of the
+// addon chrome around it.
+const CANVAS = {
+  light: { bg: '#f4f4f6', dot: '#dedee2', border: '#e6e6ea' },
+  dark: { bg: '#0e1013', dot: '#26282d', border: '#1f2126' }
+} as const;
+
 const FONT_STACK = "Lato, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
 
 // Per-surface widths match Slack's actual rendering: message column ~600,
@@ -112,11 +121,27 @@ export function Renderer({
   );
   const interactions = useMemo(() => extractInteractions(blocks), [blocks]);
 
+  const canvas = CANVAS[theme];
   const chrome = (body: React.ReactNode) => (
-    <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] }}>
+    // Outer width = surface width + canvas padding (20px on each side) so
+    // the rendered surface inside still matches Slack's per-surface width.
+    <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] + 40 }}>
       <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} />
       {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
-      {body}
+      <div
+        style={{
+          padding: 20,
+          borderRadius: 10,
+          background: canvas.bg,
+          backgroundImage: `radial-gradient(${canvas.dot} 1px, transparent 1px)`,
+          backgroundSize: '14px 14px',
+          backgroundPosition: '7px 7px',
+          border: `1px solid ${canvas.border}`,
+          boxShadow: `inset 0 1px 0 ${canvas.border}`
+        }}
+      >
+        {body}
+      </div>
       <InteractionsPanel interactions={interactions} onInteraction={onInteraction} colors={c} fontFamily={FONT_STACK} />
     </div>
   );
