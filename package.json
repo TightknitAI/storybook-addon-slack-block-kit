@@ -1,6 +1,6 @@
 {
   "name": "@tightknitai/storybook-addon-slack-block-kit",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storybook 10 addon that renders Slack Block Kit JSON the way Slack would — decorator + panel + toolbar globals (surface/theme) + MDX doc block.",
   "type": "module",
   "main": "./dist/index.cjs",
