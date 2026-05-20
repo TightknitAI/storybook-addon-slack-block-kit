@@ -1,6 +1,6 @@
 {
   "name": "@tightknitai/storybook-addon-slack-block-kit",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Storybook 10 addon that renders Slack Block Kit JSON the way Slack would — decorator + panel + toolbar globals (surface/theme) + MDX doc block.",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -41,15 +41,21 @@
     "build": "tsup",
     "build:clean": "rm -rf dist && pnpm run build",
     "dev": "tsup --watch",
-    "typecheck": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "storybook": "storybook dev -p 6007",
     "build-storybook": "storybook build",
+    "deploy": "pnpm run build-storybook && wrangler deploy",
     "lint": "biome check .",
     "lint:fix": "biome check --fix .",
     "format": "biome format --write .",
-    "prepublishOnly": "pnpm run build:clean"
+    "prepare": "lefthook install",
+    "prepublishOnly": "pnpm run build:clean && pnpm test"
   },
   "dependencies": {
+    "@tightknitai/slack-block-kit-validator": "0.1.0-alpha.0",
     "slack-blocks-to-jsx": "^1.0.4"
   },
   "peerDependencies": {
@@ -61,16 +67,20 @@
     "@biomejs/biome": "^2.4.15",
     "@storybook/addon-docs": "^10.4.0",
     "@storybook/react-vite": "^10.4.0",
-    "@types/node": "^20.0.0",
+    "@types/node": "^25.8.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "@vitejs/plugin-react": "^5.0.0",
+    "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "^4.1.6",
+    "lefthook": "^2.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "storybook": "^10.4.0",
     "tsup": "^8.3.5",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13"
+    "vite": "^8.0.13",
+    "vitest": "^4.1.6",
+    "wrangler": "^4.0.0"
   },
   "repository": {
     "type": "git",

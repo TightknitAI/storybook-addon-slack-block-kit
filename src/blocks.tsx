@@ -10,6 +10,9 @@ import type { SlackPreviewProps } from './types';
  *
  * <SlackPreview blocks={[{ type: 'section', text: { type: 'mrkdwn', text: '*hi*' } }]} />
  * ```
+ *
+ * Accepts the same surface/theme/hooks/validation/interaction props as the
+ * underlying `<Renderer>`.
  */
 export function SlackPreview(props: SlackPreviewProps) {
   return <Renderer {...props} />;

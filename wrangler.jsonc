@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "block-kit-storybook",
+  "compatibility_date": "2026-05-17",
+  // Pure static-assets Worker — no `main` script. `pnpm run build-storybook`
+  // outputs the built Storybook to `storybook-static/`, which is the demo.
+  // Custom domain (e.g. block-kit-storybook.tightknit.dev) is attached in the
+  // Cloudflare dashboard under Workers → Routes / Custom Domains.
+  "assets": {
+    "directory": "./storybook-static",
+    "not_found_handling": "404-page"
+  }
+}
