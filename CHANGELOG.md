@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.2](https://github.com/TightknitAI/storybook-addon-slack-block-kit/compare/storybook-addon-slack-block-kit-v0.1.1...storybook-addon-slack-block-kit-v0.1.2) (2026-05-20)
+
+
+### Bug Fixes
+
+* **ci:** inline publish on releases_created via npm Trusted Publisher ([128ce80](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/128ce80fe61ba3f669a84bc6e78342d470aebb09))
+* **ci:** inline publish on releases_created via npm Trusted Publisher ([9ae551d](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/9ae551d0e943eec7e85209655983c6e4dc119582))
+* **ci:** publish via npx and tag prereleases explicitly ([5f511e4](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/5f511e4d637f19fd8f928de19c6db5bbfadc97c8))
+* **ci:** publish via npx and tag prereleases explicitly ([9813a30](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/9813a30ea7a4b5ad460be4309ced60fee593c3dd))
+
 ## [0.1.1](https://github.com/TightknitAI/storybook-addon-slack-block-kit/compare/storybook-addon-slack-block-kit-v0.1.0...storybook-addon-slack-block-kit-v0.1.1) (2026-05-20)
 
 
