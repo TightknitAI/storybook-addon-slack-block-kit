@@ -46,7 +46,7 @@ body:
     attributes:
       label: Package version
       description: The version of `@tightknitai/storybook-addon-slack-block-kit` you are using.
-      placeholder: 0.1.0-alpha.0
+      placeholder: 0.1.0
     validations:
       required: true
   - type: input
