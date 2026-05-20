@@ -9,17 +9,7 @@
  *   addons: ['@tightknitai/storybook-addon-slack-block-kit']
  */
 export { SlackPreview } from './blocks';
-export { withSlackPreview } from './decorator';
-export { Renderer } from './renderer';
-export type { RendererProps } from './renderer';
-export type {
-  SlackBlocksParameter,
-  SlackBlocksParameterObject,
-  SlackPreviewHooks,
-  SlackPreviewProps,
-  SlackPreviewSurface,
-  SlackPreviewTheme
-} from './types';
+export { buildBlockKitBuilderUrl } from './builder-url';
 export {
   ADDON_ID,
   GLOBAL_SURFACE_KEY,
@@ -27,3 +17,18 @@ export {
   PANEL_ID,
   PARAM_KEY
 } from './constants';
+export { withSlackPreview } from './decorator';
+export { extractInteractions } from './interactions';
+export type { RendererProps } from './renderer';
+export { Renderer } from './renderer';
+export type {
+  SlackBlocksParameter,
+  SlackBlocksParameterObject,
+  SlackInteractionPayload,
+  SlackPreviewHooks,
+  SlackPreviewProps,
+  SlackPreviewSurface,
+  SlackPreviewTheme,
+  ValidationResult
+} from './types';
+export { validateForSurface } from './validate';

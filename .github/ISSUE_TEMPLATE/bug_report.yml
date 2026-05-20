@@ -1,0 +1,92 @@
+name: Bug report
+description: Report a defect in the storybook-addon-slack-block-kit package.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please fill in the sections below so we can reproduce and triage quickly.
+
+        For security vulnerabilities, please use [private vulnerability reporting](https://github.com/TightknitAI/storybook-addon-slack-block-kit/security/advisories/new) instead.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: A clear and concise description of what the bug is.
+      placeholder: When I set `parameters.slackBlocks` with a `header` block, the preview renders blank.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps. A repo link or `.stories.tsx` snippet is ideal.
+      placeholder: |
+        1. Add `@tightknitai/storybook-addon-slack-block-kit` to `.storybook/main.ts`
+        2. Create a story with `parameters: { slackBlocks: [...] }`
+        3. Observe the Slack preview below the story
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: The preview should render the header block in Slack's message surface.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include screenshots, console errors, or stack traces if relevant.
+    validations:
+      required: true
+  - type: input
+    id: package-version
+    attributes:
+      label: Package version
+      description: The version of `@tightknitai/storybook-addon-slack-block-kit` you are using.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: input
+    id: storybook-version
+    attributes:
+      label: Storybook version
+      placeholder: 10.4.0
+    validations:
+      required: true
+  - type: input
+    id: react-version
+    attributes:
+      label: React version
+      placeholder: 19.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: framework
+    attributes:
+      label: Storybook framework
+      options:
+        - "@storybook/react-vite"
+        - "@storybook/nextjs-vite"
+        - "@storybook/nextjs"
+        - Other (specify in additional context)
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: Which Slack surface was active when the bug occurred?
+      options:
+        - message
+        - modal
+        - Both / not applicable
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Anything else that might help — bundler, addon load order, MDX vs decorator vs panel, etc.
