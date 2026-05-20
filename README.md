@@ -2,8 +2,6 @@
 
 A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would, validates it against the official rule set, and lets you simulate interactions — all inline with your stories.
 
-> **Status: alpha (v0).** Scaffolded but not yet smoke-tested against a fresh consumer project. See [AGENTS.md](./AGENTS.md) for the current state and known risks before publishing.
-
 ## What you get
 
 - ✅ **Decorator** — every story whose `parameters.slackBlocks` is set gets a Slack-rendered preview below it.
