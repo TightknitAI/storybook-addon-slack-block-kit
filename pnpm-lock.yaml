@@ -13,7 +13,7 @@ importers:
         version: 0.1.7
       slack-blocks-to-jsx:
         specifier: ^1.0.4
-        version: 1.0.4(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        version: 1.0.6(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.4.15
@@ -2327,8 +2327,8 @@ packages:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
 
-  property-information@7.1.0:
-    resolution: {integrity: sha512-TwEZ+X+yCJmYfL7TPUOcvBZ4QfoT5YenQiJuX//0th53DE6w0xxLEtfK3iyryQFddXuvkIk51EEgrJQ0WJkOmQ==}
+  property-information@7.2.0:
+    resolution: {integrity: sha512-IAtzIB6sUiWaJYrX9smp3V46pBGbBeLFRGdh25kg1334VcBlD8HzhPeNIWQH9zhGmo2itIe25EHt9dQP7G5hmg==}
 
   react-docgen-typescript@2.4.0:
     resolution: {integrity: sha512-ZtAp5XTO5HRzQctjPU0ybY0RRCQO19X/8fxn3w7y2VVTUbGHDKULPTL4ky3vB05euSgG5NpALhEhDPvQ56wvXg==}
@@ -2431,8 +2431,8 @@ packages:
     resolution: {integrity: sha512-kUMbT1oBJCpgrnKoSr0o6wPtvRWT9W9UKvGLwfJYO2WuahZRHOpEyL1ckyMGgMWh0UdpmaoFqKKD29WTomNEGA==}
     engines: {node: '>=8'}
 
-  slack-blocks-to-jsx@1.0.4:
-    resolution: {integrity: sha512-gvM3NE2nqQ4gsuOrWQFR9uVxxQECnJLEuJYwQURdKcs6H3+udjtgnTjjHzlpCumltGn8o7ok9vLXyh2y/fhLEA==}
+  slack-blocks-to-jsx@1.0.6:
+    resolution: {integrity: sha512-0afBAupn9TsW0No/unudz6jJRTOJBWfVoB01wSrlr4V8e6Avy3J7ve7X/6lD+3qfKEbwc7eeJ9GV3B2JEAtbJg==}
     peerDependencies:
       react: ^17 || ^18 || ^19
       react-dom: ^17 || ^18 || ^19
@@ -4159,7 +4159,7 @@ snapshots:
       mdast-util-mdx-expression: 2.0.1
       mdast-util-mdx-jsx: 3.2.0
       mdast-util-mdxjs-esm: 2.0.1
-      property-information: 7.1.0
+      property-information: 7.2.0
       space-separated-tokens: 2.0.2
       style-to-js: 1.1.21
       unist-util-position: 5.0.0
@@ -4862,7 +4862,7 @@ snapshots:
       ansi-styles: 5.2.0
       react-is: 17.0.2
 
-  property-information@7.1.0: {}
+  property-information@7.2.0: {}
 
   react-docgen-typescript@2.4.0(typescript@6.0.3):
     dependencies:
@@ -5067,7 +5067,7 @@ snapshots:
     dependencies:
       unicode-emoji-modifier-base: 1.0.0
 
-  slack-blocks-to-jsx@1.0.4(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
+  slack-blocks-to-jsx@1.0.6(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7):
     dependencies:
       node-emoji: 2.2.0
       react: 19.2.7
