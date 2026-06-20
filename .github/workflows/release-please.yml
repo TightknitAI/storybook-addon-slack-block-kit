@@ -29,7 +29,7 @@ jobs:
       # `releases_created` (plural) is what the action sets in manifest
       # mode; the singular `release_created` only exists in non-manifest
       # mode and would silently skip every step here.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: ${{ steps.release.outputs.releases_created == 'true' }}
 
       - uses: ./.github/actions/setup
