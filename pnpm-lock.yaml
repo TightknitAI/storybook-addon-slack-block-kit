@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@tightknitai/slack-block-kit-validator':
-        specifier: 0.1.11
-        version: 0.1.11
+        specifier: 0.1.13
+        version: 0.1.13
       slack-blocks-to-jsx:
         specifier: ^1.0.4
         version: 1.1.1(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1393,8 +1393,8 @@ packages:
     peerDependencies:
       '@testing-library/dom': '>=7.21.4'
 
-  '@tightknitai/slack-block-kit-validator@0.1.11':
-    resolution: {integrity: sha512-E5RKDEJnARJUOZ9DhagG/i/GIpkX1k3D2GKDCwI4Jx4quJfSKE/cGF0j/g8hDlS1Cu0fTvEClVBtCngYQ9Pgkg==}
+  '@tightknitai/slack-block-kit-validator@0.1.13':
+    resolution: {integrity: sha512-Zxe+cgKnWSettBS5PCxGcNUR7GufZZlig9XXzf7FSxt6sYBc56eriEWE9Oub4MckSuCQTl8ds0NFsiMERTYkrg==}
     engines: {node: '>=20'}
 
   '@tybys/wasm-util@0.10.3':
@@ -1805,8 +1805,8 @@ packages:
   fast-deep-equal@3.1.3:
     resolution: {integrity: sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q==}
 
-  fast-uri@3.1.4:
-    resolution: {integrity: sha512-8JnbkQ4juDyvYs4mgFGQqg4yCYtFDtUtmp2QIQq11ZZe5CFQ5wcqm1rqDgAh/QdMySuBnPzMUiJUNZG5N/AiQw==}
+  fast-uri@3.1.5:
+    resolution: {integrity: sha512-gHwA1O9LDIcKunMKhObS/HimwtehO1nPUECKAu5TpKgaO19fcWEl4bliWe1jWxVFvIXztJjjQ4L8XQ1EU9f7Jw==}
 
   fdir@6.5.0:
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
@@ -3757,7 +3757,7 @@ snapshots:
     dependencies:
       '@testing-library/dom': 10.4.1
 
-  '@tightknitai/slack-block-kit-validator@0.1.11':
+  '@tightknitai/slack-block-kit-validator@0.1.13':
     dependencies:
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
@@ -3938,7 +3938,7 @@ snapshots:
   ajv@8.20.0:
     dependencies:
       fast-deep-equal: 3.1.3
-      fast-uri: 3.1.4
+      fast-uri: 3.1.5
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
 
@@ -4170,7 +4170,7 @@ snapshots:
 
   fast-deep-equal@3.1.3: {}
 
-  fast-uri@3.1.4: {}
+  fast-uri@3.1.5: {}
 
   fdir@6.5.0(picomatch@4.0.5):
     optionalDependencies:
