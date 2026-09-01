@@ -17,6 +17,7 @@ Read this before doing anything destructive. The user scaffolded this repo in a 
 | Interaction simulator | ✅ working | `src/interactions.ts` walks the blocks for interactive elements; the chrome renders a "Simulate" button per element that fires `parameters.slackBlocks.onInteraction(payload)` and logs to the console. |
 | Args-driven blocks | ✅ working | `parameters.slackBlocks` accepts a function `(args) => Block[] \| { blocks, ... }` so Storybook Controls drive the preview live. |
 | Copy as JSON / Open in Block Kit Builder | ✅ working | Top-right of every preview and in the panel. The Builder URL wraps the payload in the correct surface envelope (`{type:'modal',blocks}`, `{type:'home',blocks}`, or bare `{blocks}`). |
+| URL scheme allowlist | ✅ working | `src/sanitize.ts` strips every URL field whose scheme isn't `http`/`https`/`mailto`; the renderer's `link` hook catches the ones spelled inside mrkdwn text. Upstream applies no protocol check at all, so this is the only thing between a `javascript:` URL in a payload and an `<a href>` on React 18. Don't drop either layer — `test/renderer-urls.test.tsx` pins both. |
 | MDX doc block (`<SlackPreview>`) | ⚠ shipped, **dogfood disabled** | Exported from the package and usable in consumer MDX, but Storybook's `@storybook/addon-docs` MDX preprocessor can't resolve `slack-blocks-to-jsx`'s transitive `emojilib` dep. Consumers may hit the same issue depending on their build. See "Known risks → MDX preprocessor". |
 | Addon panel renders the live preview | ⚠ stubbed | The panel shows the validation report, surface, JSON/Builder controls, and block count — but does NOT render the Slack preview itself. Manager-side esbuild bundle can't resolve `emojilib` (transitive through `slack-blocks-to-jsx`). The decorator covers the live preview inline. See "Known risks → Manager-side rendering". |
 
@@ -130,6 +131,7 @@ storybook-addon-slack-block-kit/
 │   ├── renderer.tsx                ← Renderer — Slack-styled wrapper around slack-blocks-to-jsx
 │   ├── preview-chrome.tsx          ← PreviewToolbar / ValidationBanner / InteractionsPanel (factored out for reuse + testability)
 │   ├── validate.ts                 ← validateForSurface — surface→target adapter over @tightknitai/slack-block-kit-validator
+│   ├── sanitize.ts                 ← isSafeUrl / sanitizeBlockUrls — URL scheme allowlist applied before every render
 │   ├── builder-url.ts              ← buildBlockKitBuilderUrl — wraps blocks in the surface-appropriate envelope and URL-encodes
 │   ├── interactions.ts             ← extractInteractions — walks blocks for interactive elements (buttons/selects/etc.)
 │   ├── decorator.tsx               ← withSlackPreview — preview-side story decorator (supports bare/object/function param forms)
@@ -147,6 +149,7 @@ storybook-addon-slack-block-kit/
     ├── ArgsDriven.stories.tsx      ← function-form parameter driving blocks from Controls
     ├── AppHome.stories.tsx         ← `home` surface with the tab-strip chrome
     ├── Validation.stories.tsx      ← valid + intentionally-invalid fixtures for the banner
+    ├── UrlSafety.stories.tsx       ← safe + hostile URL fixtures for the allowlist
     ├── Interactions.stories.tsx    ← buttons + select with onInteraction wired
     └── DocBlock.mdx                ← PRESERVED but excluded from dogfood discovery
 ```

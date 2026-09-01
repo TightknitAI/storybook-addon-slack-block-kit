@@ -3,7 +3,8 @@ import 'slack-blocks-to-jsx/dist/style.css';
 import { useMemo } from 'react';
 import { type Block, Message } from 'slack-blocks-to-jsx';
 import { extractInteractions } from './interactions';
-import { InteractionsPanel, PreviewToolbar, ValidationBanner } from './preview-chrome';
+import { InteractionsPanel, PreviewToolbar, UnsafeUrlNotice, ValidationBanner } from './preview-chrome';
+import { isSafeUrl, sanitizeBlockUrls } from './sanitize';
 import type { SlackInteractionPayload, SlackPreviewHooks, SlackPreviewSurface, SlackPreviewTheme } from './types';
 import { validateForSurface } from './validate';
 
@@ -66,6 +67,58 @@ const DEFAULT_LOGO = `data:image/svg+xml;utf8,${encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36"><rect width="36" height="36" rx="6" fill="#4A154B"/><text x="50%" y="56%" font-family="system-ui,-apple-system,sans-serif" font-weight="700" font-size="18" fill="white" text-anchor="middle" dominant-baseline="middle">S</text></svg>'
 )}`;
 
+/**
+ * Shape `slack-blocks-to-jsx` passes to its `link` hook. Mirrors the
+ * library's own `LinkInput`, kept local so the addon isn't pinned to one
+ * version of its exported types.
+ */
+interface LinkHookInput {
+  href?: string;
+  children?: React.ReactNode;
+  className?: string;
+  target?: '_blank' | '_self' | '_parent' | '_top';
+  rel?: string;
+}
+
+type LinkHook = (data: LinkHookInput) => React.ReactNode;
+
+/**
+ * Wraps the consumer's `hooks` so every link the library renders passes
+ * the scheme allowlist first.
+ *
+ * `sanitizeBlockUrls` already strips URL *fields* from the payload, but a
+ * link can also be spelled inside text — Slack's `<url|label>` mrkdwn
+ * syntax, markdown `[label](url)`, `<!date^…^url|fallback>` — where the
+ * URL can't be rewritten without mangling the text around it.
+ * `slack-blocks-to-jsx` routes every one of those through `hooks.link`,
+ * so that's where they get caught.
+ *
+ * Safe links are handed straight to the consumer's hook, or rendered as
+ * the anchor the library would have rendered itself. Unsafe ones keep
+ * their label but lose the link.
+ */
+export function safeLinkHooks(hooks?: SlackPreviewHooks): SlackPreviewHooks {
+  const consumerLink = hooks?.link as LinkHook | undefined;
+
+  const link: LinkHook = (data) => {
+    if (typeof data.href !== 'string' || isSafeUrl(data.href)) {
+      if (consumerLink) return consumerLink(data);
+      return (
+        <a href={data.href} className={data.className} target={data.target} rel={data.rel}>
+          {data.children}
+        </a>
+      );
+    }
+    return (
+      <span className={data.className} title={`Unsafe URL removed: ${data.href}`}>
+        {data.children}
+      </span>
+    );
+  };
+
+  return { ...hooks, link };
+}
+
 interface SurfaceBodyProps {
   blocks: Block[];
   theme: SlackPreviewTheme;
@@ -100,18 +153,29 @@ function SurfaceBody({ blocks, theme, hooks }: SurfaceBodyProps) {
  * tabs) so consumers can see what their payload will look like in
  * context. The `#slack_blocks_to_jsx` id + `data-theme` attribute are
  * load-bearing for the upstream CSS scope; do not remove.
+ *
+ * URLs are held to an `http` / `https` / `mailto` allowlist before
+ * anything renders — see `./sanitize`. Slack does the same server-side, so
+ * this keeps the preview faithful as well as safe: a `javascript:` URL a
+ * story picked up from user-supplied JSON never reaches an `href`.
  */
 export function Renderer({
-  blocks,
+  blocks: rawBlocks,
   theme = 'light',
   surface = 'message',
-  hooks,
+  hooks: rawHooks,
   name = DEFAULT_NAME,
   logo = DEFAULT_LOGO,
   validate = true,
   onInteraction
 }: RendererProps) {
   const c = COLORS[theme];
+
+  // Everything downstream — validation, the interaction simulator, Copy
+  // JSON, the Builder deeplink and the render itself — sees the sanitized
+  // payload, so what the preview reports always matches what it draws.
+  const { blocks, removed } = useMemo(() => sanitizeBlockUrls(rawBlocks), [rawBlocks]);
+  const hooks = useMemo(() => safeLinkHooks(rawHooks), [rawHooks]);
 
   // Validation + interaction extraction are cheap but worth memoizing —
   // they run on every theme/surface toggle from the toolbar globals.
@@ -128,6 +192,7 @@ export function Renderer({
     <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] + 40 }}>
       <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} />
       {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
+      <UnsafeUrlNotice removed={removed} fontFamily={FONT_STACK} />
       <div
         style={{
           padding: 20,

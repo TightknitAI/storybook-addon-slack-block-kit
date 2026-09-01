@@ -21,6 +21,8 @@ export { withSlackPreview } from './decorator';
 export { extractInteractions } from './interactions';
 export type { RendererProps } from './renderer';
 export { Renderer } from './renderer';
+export type { SanitizedBlocks } from './sanitize';
+export { isSafeUrl, sanitizeBlockUrls } from './sanitize';
 export type {
   SlackBlocksParameter,
   SlackBlocksParameterObject,

@@ -12,6 +12,7 @@ A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would, vali
 - ✅ **Open in Block Kit Builder** — one-click handoff to Slack's hosted editor with the payload preloaded.
 - ✅ **Copy as JSON** — grab the rendered payload to paste into Postman, a webhook test, or a `chat.postMessage` call.
 - ✅ **MDX doc block** — `<SlackPreview blocks={...} />` for use in your own MDX pages or React tests.
+- ✅ **URL allowlist** — every URL in a payload is held to `http` / `https` / `mailto` before it reaches an `<a href>` or `<img src>`, the way Slack sanitizes server-side. See [URL safety](#url-safety).
 - ⚠ **Addon panel** — renders the validation report + JSON/Builder controls; does NOT render the Slack preview itself (the decorator does that inline). See [AGENTS.md](./AGENTS.md) → "Known risks → Manager-side rendering".
 
 Rendering is delegated to [`slack-blocks-to-jsx`](https://www.npmjs.com/package/slack-blocks-to-jsx); validation to [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). The addon is a thin Storybook wrapper around them.
@@ -171,6 +172,33 @@ import {
 const { valid, errors } = validateForSurface(buildBlocks(input), 'message');
 expect(valid).toBe(true);
 ```
+
+## URL safety
+
+Slack sanitizes URLs server-side before it renders a message. `slack-blocks-to-jsx` doesn't, so the addon does it here: every URL in a payload is checked against an `http` / `https` / `mailto` allowlist before render, and anything else — `javascript:`, `data:`, `vbscript:`, custom app schemes — is dropped.
+
+This matters when a story renders blocks it didn't author: a design system previewing real messages, a docs page rendering user-submitted payloads, a fixture pulled from a Slack export. Without the check a `rich_text` link with `url: "javascript:…"` reaches the DOM verbatim on React 18 (React 19 blocks that particular scheme itself; `data:` gets through on both).
+
+Two layers, because URLs arrive two ways:
+
+- **URL fields** (`image_url`, `video_url`, a `rich_text` link's `url`, `slack_file.url`, …) are stripped from the payload before it renders — including nested ones, at any depth.
+- **Links spelled inside mrkdwn** — Slack's `<url|label>` syntax, markdown `[label](url)`, `<!date^…^url|fallback>` — can't be rewritten without mangling the text, so they're caught at render time. The link keeps its label and loses its target.
+
+Either way the preview says what it dropped, in an amber notice above the blocks and in the addon panel — the payload never changes silently. Safe URLs render exactly as before, and a `hooks.link` you pass still receives them.
+
+The same check is exported if you want it in your own tooling:
+
+```tsx
+import { isSafeUrl, sanitizeBlockUrls } from '@tightknitai/storybook-addon-slack-block-kit';
+
+isSafeUrl('https://example.com'); // true
+isSafeUrl('javascript:alert(1)'); // false
+
+const { blocks, removed } = sanitizeBlockUrls(untrustedBlocks);
+// removed: ['javascript:alert(1)']
+```
+
+Note that this protects the *preview*. Blocks you send to Slack should be validated on the way in as well — `validateForSurface` covers shape, `sanitizeBlockUrls` covers URLs.
 
 ## Develop
 
