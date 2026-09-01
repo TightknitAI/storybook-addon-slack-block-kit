@@ -2,6 +2,7 @@ import { createElement as h, useMemo, useState } from 'react';
 import { useArgs, useGlobals, useParameter } from 'storybook/manager-api';
 import { buildBlockKitBuilderUrl } from './builder-url';
 import { GLOBAL_SURFACE_KEY, PARAM_KEY } from './constants';
+import { sanitizeBlockUrls } from './sanitize';
 import type { SlackBlocksParameter, SlackBlocksParameterObject, SlackPreviewSurface } from './types';
 import { validateForSurface } from './validate';
 
@@ -64,10 +65,17 @@ export function Panel() {
   const normalized = useMemo(() => coerce(raw, args as Record<string, unknown> | undefined), [raw, args]);
   const effectiveSurface = normalized?.surface ?? surface;
 
+  // Same allowlist the renderer applies, so the panel validates, copies
+  // and deeplinks exactly the payload the preview drew.
+  const { blocks, removed } = useMemo(
+    () => (normalized ? sanitizeBlockUrls(normalized.blocks) : { blocks: [], removed: [] }),
+    [normalized]
+  );
+
   const validation = useMemo(() => {
     if (!normalized || normalized.validate === false) return null;
-    return validateForSurface(normalized.blocks, effectiveSurface);
-  }, [normalized, effectiveSurface]);
+    return validateForSurface(blocks, effectiveSurface);
+  }, [normalized, blocks, effectiveSurface]);
 
   if (!normalized) {
     return h(
@@ -103,11 +111,11 @@ export function Panel() {
     );
   }
 
-  const blockCount = normalized.blocks.length;
+  const blockCount = blocks.length;
 
   const onCopy = () => {
     void navigator.clipboard
-      .writeText(JSON.stringify(normalized.blocks, null, 2))
+      .writeText(JSON.stringify(blocks, null, 2))
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
@@ -147,7 +155,7 @@ export function Panel() {
       h(
         'a',
         {
-          href: buildBlockKitBuilderUrl(normalized.blocks, effectiveSurface),
+          href: buildBlockKitBuilderUrl(blocks, effectiveSurface),
           target: '_blank',
           rel: 'noopener noreferrer',
           style: btnStyle
@@ -216,6 +224,40 @@ export function Panel() {
       )
     : null;
 
+  const unsafeUrlNode =
+    removed.length > 0
+      ? h(
+          'div',
+          {
+            style: {
+              marginTop: 12,
+              padding: '8px 12px',
+              fontSize: 13,
+              color: '#7a4a00',
+              background: '#fff6e5',
+              border: '1px solid #f0d9a8',
+              borderRadius: 4
+            }
+          },
+          h(
+            'div',
+            { style: { fontWeight: 600, marginBottom: 6 } },
+            `⚠ ${removed.length} unsafe ${removed.length === 1 ? 'URL' : 'URLs'} removed before render — only http, https and mailto render`
+          ),
+          h(
+            'ul',
+            { style: { margin: 0, paddingLeft: 20 } },
+            removed.map((url, idx) =>
+              h(
+                'li',
+                { key: `${url}-${idx}`, style: { marginTop: 2 } },
+                h('code', { style: { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 } }, url)
+              )
+            )
+          )
+        )
+      : null;
+
   const disabledNote =
     normalized.validate === false
       ? h(
@@ -227,5 +269,12 @@ export function Panel() {
         )
       : null;
 
-  return h('div', { style: { padding: 16, fontFamily: 'inherit' } }, summary, validationNode, disabledNote);
+  return h(
+    'div',
+    { style: { padding: 16, fontFamily: 'inherit' } },
+    summary,
+    validationNode,
+    unsafeUrlNode,
+    disabledNote
+  );
 }

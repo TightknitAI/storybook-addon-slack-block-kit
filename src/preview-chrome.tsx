@@ -131,6 +131,47 @@ export function ValidationBanner({ result, colors: _colors, fontFamily }: Valida
   );
 }
 
+interface UnsafeUrlNoticeProps {
+  removed: string[];
+  fontFamily: string;
+}
+
+/**
+ * Shown when the renderer stripped a URL whose scheme isn't on the
+ * allowlist (see `../sanitize`). Without it the preview would quietly
+ * differ from the payload the story declared — a dead link or a missing
+ * image with no explanation.
+ */
+export function UnsafeUrlNotice({ removed, fontFamily }: UnsafeUrlNoticeProps) {
+  if (removed.length === 0) return null;
+
+  return (
+    <details
+      style={{
+        marginBottom: 6,
+        padding: '6px 10px',
+        fontSize: 12,
+        fontFamily,
+        color: '#7a4a00',
+        background: '#fff6e5',
+        border: '1px solid #f0d9a8',
+        borderRadius: 4
+      }}
+    >
+      <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
+        ⚠ {removed.length} unsafe {removed.length === 1 ? 'URL' : 'URLs'} removed — only http, https and mailto render
+      </summary>
+      <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
+        {removed.map((url, idx) => (
+          <li key={`${url}-${idx}`} style={{ marginTop: 2 }}>
+            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 }}>{url}</code>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
+
 interface InteractionsProps {
   interactions: SlackInteractionPayload[];
   onInteraction?: (payload: SlackInteractionPayload) => void;
