@@ -17,8 +17,13 @@ updates:
           - minor
           - patch
 
+  # `/` covers .github/workflows plus a root action.yml only. The
+  # composite action's own SHA-pinned `uses:` steps live under
+  # .github/actions/setup and must be listed to be kept current.
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/setup
     schedule:
       interval: weekly
     groups:
