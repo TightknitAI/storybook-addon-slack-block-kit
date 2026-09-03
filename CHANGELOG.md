@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.3](https://github.com/TightknitAI/storybook-addon-slack-block-kit/compare/storybook-addon-slack-block-kit-v0.1.2...storybook-addon-slack-block-kit-v0.1.3) (2026-09-03)
+
+
+### Bug Fixes
+
+* **ci:** gate release-please publish on releases_created == 'true' ([5afbbef](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/5afbbef54e876f3e0609da3eb279d5f9a8f3cb6d))
+* **ci:** gate release-please publish on releases_created == 'true' ([18c9b67](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/18c9b67a1c64422cada7e9fd4d7b861c8d7da66b))
+* hold block URLs to an http/https/mailto allowlist before render ([93c958a](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/93c958ab53cccbc19752aff0a6098dff0980f506))
+* hold block URLs to an http/https/mailto allowlist before render ([b9265bd](https://github.com/TightknitAI/storybook-addon-slack-block-kit/commit/b9265bd8b3531561a36ddc7b3e641ce233f33513))
+
 ## [0.1.2](https://github.com/TightknitAI/storybook-addon-slack-block-kit/compare/storybook-addon-slack-block-kit-v0.1.1...storybook-addon-slack-block-kit-v0.1.2) (2026-05-20)
 
 
