@@ -17,16 +17,23 @@ jobs:
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
 
-      - name: Enable auto-merge for minor/patch updates
-        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
-        run: gh pr merge --auto --squash "$PR_URL"
-        env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Approve PR
-        if: steps.metadata.outputs.update-type != 'version-update:semver-major'
-        run: gh pr review --approve "$PR_URL"
+      # Auto-merge covers minor/patch bumps of npm devDependencies and of
+      # the SHA-pinned GitHub Actions only. Production dependencies ship
+      # inside the published package (both of them handle user-controlled
+      # Block Kit JSON), so a bump to any of them waits for a human to read
+      # the diff. For a grouped PR, fetch-metadata reports the highest-
+      # priority type present (direct:production > direct:development >
+      # indirect), so a group touching any production dependency is held.
+      # Dependabot reports every Actions bump as direct:production, hence
+      # the explicit ecosystem allowance.
+      - name: Approve and enable auto-merge
+        if: >-
+          steps.metadata.outputs.update-type != 'version-update:semver-major' &&
+          (steps.metadata.outputs.dependency-type == 'direct:development' ||
+          steps.metadata.outputs.package-ecosystem == 'github_actions')
+        run: |
+          gh pr merge --auto --squash "$PR_URL"
+          gh pr review --approve "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
