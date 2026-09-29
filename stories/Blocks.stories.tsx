@@ -10,17 +10,18 @@ import { SlackPreview } from '../src/blocks';
  * except `data_table` is drawn by `slack-blocks-to-jsx`; `data_table` goes through
  * the addon's own translation in `src/normalize.ts`.
  *
- * Each story passes a single block in `args.blocks`, so the Controls panel doubles
- * as a JSON inspector. KitchenSink composes many blocks at once to verify they
+ * Each story passes its blocks in `args.blocks`, so the Controls panel doubles as a
+ * JSON inspector. KitchenSink composes many blocks at once to verify they
  * coexist on a single surface.
  */
 const meta = {
   title: 'Slack Blocks',
   component: SlackPreview,
-  // Opt the catalog out of the decorator — `SlackPreview` already renders
-  // a preview from `args.blocks`, so the auto-fallback in `withSlackPreview`
-  // would draw a second copy below the first.
-  parameters: { layout: 'padded', slackBlocks: false },
+  // The addon's decorator draws the preview from `args.blocks` (plus
+  // `args.theme` / `args.surface`) and feeds the panel, so the story itself
+  // renders nothing — rendering `SlackPreview` here too would draw it twice.
+  render: () => <></>,
+  parameters: { layout: 'padded' },
   argTypes: {
     theme: { control: { type: 'inline-radio' }, options: ['light', 'dark'] },
     surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'home'] }
@@ -368,8 +369,7 @@ export const ContextActions: Story = {
         ]
       }
     ]
-  },
-  parameters: { surface: 'message' }
+  }
 };
 
 export const Input: Story = {

@@ -1,19 +1,21 @@
 # @tightknitai/storybook-addon-slack-block-kit
 
-A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would, validates it against the official rule set, and lets you simulate interactions — all inline with your stories.
+A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would, validates it against the official rule set, and lets you fire interactions — while the canvas shows nothing but the Slack UI, so every story doubles as a clean screenshot.
 
 ## What you get
 
 - ✅ **Decorator** — every story whose `parameters.slackBlocks` is set gets a Slack-rendered preview below it.
 - ✅ **Three surfaces** — toolbar globals flip every preview between **Message**, **Modal**, and **App Home** chrome. Blocks always render inside a real Slack surface, so you can see how they'll actually look.
-- ✅ **Live validation** — every preview runs through [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). Errors show up inline above the preview and in the addon panel, so you catch malformed payloads at story-time instead of in production.
-- ✅ **Interaction simulator** — buttons, selects, datepickers etc. are listed below every preview with a "Simulate" action that fires a payload identical to what Slack would POST to your interactivity endpoint.
+- ✅ **Clean canvas** — the canvas is just the rendered surface. Everything else lives in the **Slack Block Kit** addon panel, so a screenshot of a story is a screenshot of Slack.
+- ✅ **Live validation** — every preview runs through [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). The full report is in the addon panel, and the panel's tab shows the issue count, so you catch malformed payloads at story-time instead of in production.
+- ✅ **Interactions** — click a button in the preview, or "Simulate" any button / select / datepicker from the panel. Each fires a payload shaped like what Slack would POST to your interactivity endpoint, to your `onInteraction` and to Storybook's Actions panel.
+- ✅ **Your envelope** — set the app name, avatar, timestamp and modal title / buttons per story so previews match your real app.
 - ✅ **Args-driven blocks** — pass a function for `parameters.slackBlocks` to derive blocks from story args, so Storybook Controls drive the preview live.
 - ✅ **Open in Block Kit Builder** — one-click handoff to Slack's hosted editor with the payload preloaded.
 - ✅ **Copy as JSON** — grab the rendered payload to paste into Postman, a webhook test, or a `chat.postMessage` call.
-- ✅ **MDX doc block** — `<SlackPreview blocks={...} />` for use in your own MDX pages or React tests.
+- ✅ **MDX doc block** — `<SlackPreview blocks={...} />` for use in your own MDX pages or React tests. MDX pages have no addon panel, so pass `chrome` to draw validation, Copy JSON and the simulator around it.
 - ✅ **URL allowlist** — every URL in a payload is held to `http` / `https` / `mailto` before it reaches an `<a href>` or `<img src>`, the way Slack sanitizes server-side. See [URL safety](#url-safety).
-- ⚠ **Addon panel** — renders the validation report + JSON/Builder controls; does NOT render the Slack preview itself (the decorator does that inline). See [AGENTS.md](./AGENTS.md) → "Known risks → Manager-side rendering".
+- ⚠ **Addon panel** — holds the validation report, interactions and JSON/Builder controls, but does NOT render the Slack preview itself (the decorator does that on the canvas). See [AGENTS.md](./AGENTS.md) → "Known risks → Manager-side rendering".
 
 Rendering is delegated to [`slack-blocks-to-jsx`](https://www.npmjs.com/package/slack-blocks-to-jsx); validation to [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). The addon is a thin Storybook wrapper around them.
 
@@ -81,11 +83,19 @@ parameters: {
     theme: 'dark',          // override toolbar global
     surface: 'modal',       // 'message' | 'modal' | 'home'
     hooks: { /* user/channel/emoji hooks — see below */ },
-    layout: 'panel-only',   // hide inline preview; only addon panel renders it
-    validate: false,        // disable the validation banner
+    layout: 'panel-only',   // hide the canvas preview; only the addon panel reports on it
+    validate: false,        // skip validation
+    chrome: true,           // also draw Copy JSON, validation and the simulator on the canvas
+
+    // The envelope around the blocks — match your real app for faithful screenshots.
+    name: 'Tightknit',                       // app name in the message header
+    logo: 'https://example.com/avatar.png',  // app avatar
+    time: '2026-09-29T15:04:00Z',            // pin the timestamp so snapshots don't drift
+    modal: { title: 'Invite teammates', submit: 'Send', close: 'Not now' }, // submit: false hides it
+
     onInteraction: (payload) => {
-      // fires when the user clicks Simulate on a button/select/etc.
-      // payload mirrors Slack's interactivity POST body
+      // fires when a button is clicked in the preview, or an element is
+      // simulated from the panel; payload mirrors Slack's interactivity POST body
       console.log(payload);
     }
   }
@@ -184,7 +194,7 @@ Two layers, because URLs arrive two ways:
 - **URL fields** (`image_url`, `video_url`, a `rich_text` link's `url`, `slack_file.url`, …) are stripped from the payload before it renders — including nested ones, at any depth.
 - **Links spelled inside mrkdwn** — Slack's `<url|label>` syntax, markdown `[label](url)`, `<!date^…^url|fallback>` — can't be rewritten without mangling the text, so they're caught at render time. The link keeps its label and loses its target.
 
-Either way the preview says what it dropped, in an amber notice above the blocks and in the addon panel — the payload never changes silently. Safe URLs render exactly as before, and a `hooks.link` you pass still receives them.
+Either way the addon panel lists what was dropped (and so does an amber notice above the blocks, with `chrome: true`) — the payload never changes silently. Safe URLs render exactly as before, and a `hooks.link` you pass still receives them.
 
 The same check is exported if you want it in your own tooling:
 
@@ -215,7 +225,7 @@ pnpm test
 
 ## See also
 
-- [`@tightknitai/slack-block-kit-validator`](https://github.com/TightknitAI/slack-block-kit-validator) — the JSON Schema + caveat helpers that power the validation banner.
+- [`@tightknitai/slack-block-kit-validator`](https://github.com/TightknitAI/slack-block-kit-validator) — the JSON Schema + caveat helpers that power the validation report.
 - [`@tightknitai/block-kitchen`](https://github.com/TightknitAI/block-kitchen) — drag-and-drop visual builder that ships the same `SlackBlockPreview` renderer the addon mirrors.
 
 ## License

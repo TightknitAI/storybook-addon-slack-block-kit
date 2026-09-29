@@ -98,3 +98,24 @@ function collect(blocks: Array<Record<string, unknown>>, out: SlackInteractionPa
     }
   }
 }
+
+// Elements whose rendered DOM is a single <button> labelled with the
+// element's `text` — the ones a click on the canvas can be traced back to.
+const CLICKABLE_TYPES = new Set(['button', 'workflow_button']);
+
+/**
+ * Maps a click on the rendered preview back to the payload it stands for.
+ * `slack-blocks-to-jsx` doesn't carry `action_id`s into the DOM, so the
+ * button's visible label is all there is to go on: the match only counts
+ * when exactly one button in the payload has that label. Selects, pickers
+ * and ambiguous labels stay reachable through the panel's Simulate list.
+ */
+export function matchClickedLabel(
+  interactions: SlackInteractionPayload[],
+  label: string
+): SlackInteractionPayload | undefined {
+  const text = label.trim();
+  if (!text) return undefined;
+  const hits = interactions.filter((i) => CLICKABLE_TYPES.has(i.type) && i.label?.trim() === text);
+  return hits.length === 1 ? hits[0] : undefined;
+}

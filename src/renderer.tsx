@@ -1,28 +1,15 @@
 import 'slack-blocks-to-jsx/dist/style.css';
 
-import { useMemo } from 'react';
+import { type MouseEvent, useMemo } from 'react';
 import { type Block, Message } from 'slack-blocks-to-jsx';
-import { extractInteractions } from './interactions';
+import { extractInteractions, matchClickedLabel } from './interactions';
 import { normalizeForRender } from './normalize';
 import { InteractionsPanel, PreviewToolbar, UnsafeUrlNotice, ValidationBanner } from './preview-chrome';
 import { isSafeUrl, sanitizeBlockUrls } from './sanitize';
-import type { SlackInteractionPayload, SlackPreviewHooks, SlackPreviewSurface, SlackPreviewTheme } from './types';
+import type { SlackPreviewHooks, SlackPreviewProps, SlackPreviewSurface, SlackPreviewTheme } from './types';
 import { validateForSurface } from './validate';
 
-export interface RendererProps {
-  blocks: Block[];
-  theme?: SlackPreviewTheme;
-  surface?: SlackPreviewSurface;
-  hooks?: SlackPreviewHooks;
-  /** App name shown in the message envelope. Defaults to "Storybook App". */
-  name?: string;
-  /** Avatar URL shown in the message envelope. Defaults to an inline SVG. */
-  logo?: string;
-  /** Show the inline validation banner. Defaults to `true`. */
-  validate?: boolean;
-  /** Fired when the user clicks "Simulate" on an interactive element. */
-  onInteraction?: (payload: SlackInteractionPayload) => void;
-}
+export type RendererProps = SlackPreviewProps;
 
 const COLORS = {
   light: {
@@ -120,22 +107,31 @@ export function safeLinkHooks(hooks?: SlackPreviewHooks): SlackPreviewHooks {
   return { ...hooks, link };
 }
 
+type ClickHandler = (event: MouseEvent<HTMLElement>) => void;
+
 interface SurfaceBodyProps {
   blocks: Block[];
   theme: SlackPreviewTheme;
   hooks?: SlackPreviewHooks;
+  time: Date;
+  onClickCapture?: ClickHandler;
 }
 
 /**
  * The actual Slack-rendered blocks, scoped under the
  * `#slack_blocks_to_jsx` id + `data-theme` attribute the upstream
- * library's CSS relies on. Used inside every surface variant below.
+ * library's CSS relies on. Used inside the modal and home surfaces.
  */
-function SurfaceBody({ blocks, theme, hooks }: SurfaceBodyProps) {
+function SurfaceBody({ blocks, theme, hooks, time, onClickCapture }: SurfaceBodyProps) {
   return (
-    <div id="slack_blocks_to_jsx" data-theme={theme} className="slack_blocks_to_jsx styles_enabled">
+    <div
+      id="slack_blocks_to_jsx"
+      data-theme={theme}
+      className="slack_blocks_to_jsx styles_enabled"
+      onClickCapture={onClickCapture}
+    >
       <Message
-        time={new Date()}
+        time={time}
         name=""
         logo=""
         withoutWrapper
@@ -147,6 +143,12 @@ function SurfaceBody({ blocks, theme, hooks }: SurfaceBodyProps) {
   );
 }
 
+function toDate(time: SlackPreviewProps['time']): Date {
+  if (time === undefined) return new Date();
+  const date = time instanceof Date ? time : new Date(time);
+  return Number.isNaN(date.getTime()) ? new Date() : date;
+}
+
 /**
  * Renders an array of Slack Block Kit blocks the way Slack would, via
  * `slack-blocks-to-jsx`'s `<Message>`. Blocks always render inside a
@@ -154,6 +156,11 @@ function SurfaceBody({ blocks, theme, hooks }: SurfaceBodyProps) {
  * tabs) so consumers can see what their payload will look like in
  * context. The `#slack_blocks_to_jsx` id + `data-theme` attribute are
  * load-bearing for the upstream CSS scope; do not remove.
+ *
+ * By default that surface is all it draws, so a screenshot of the story is
+ * a screenshot of the Slack UI. Validation, interactions and Copy JSON live
+ * in the addon panel; `chrome` draws them inline too, for MDX pages and
+ * other places without a panel.
  *
  * URLs are held to an `http` / `https` / `mailto` allowlist before
  * anything renders — see `./sanitize`. Slack does the same server-side, so
@@ -167,36 +174,46 @@ export function Renderer({
   hooks: rawHooks,
   name = DEFAULT_NAME,
   logo = DEFAULT_LOGO,
+  time: rawTime,
+  modal,
+  chrome = false,
   validate = true,
   onInteraction
 }: RendererProps) {
   const c = COLORS[theme];
 
-  // Everything downstream — validation, the interaction simulator, Copy
-  // JSON, the Builder deeplink and the render itself — sees the sanitized
+  // Everything downstream — validation, the interaction list, Copy JSON,
+  // the Builder deeplink and the render itself — sees the sanitized
   // payload, so what the preview reports always matches what it draws.
   const { blocks, removed } = useMemo(() => sanitizeBlockUrls(rawBlocks), [rawBlocks]);
   const hooks = useMemo(() => safeLinkHooks(rawHooks), [rawHooks]);
-
-  // Validation + interaction extraction are cheap but worth memoizing —
-  // they run on every theme/surface toggle from the toolbar globals.
-  const validation = useMemo(
-    () => (validate ? validateForSurface(blocks, surface) : null),
-    [blocks, surface, validate]
-  );
   const interactions = useMemo(() => extractInteractions(blocks), [blocks]);
   // What actually gets drawn: `data_table` translated into a `table`,
   // unknown block types swapped for a visible placeholder. See ./normalize.
   const drawn = useMemo(() => normalizeForRender(blocks), [blocks]);
+  const validation = useMemo(
+    () => (chrome && validate ? validateForSurface(blocks, surface, modal) : null),
+    [chrome, validate, blocks, surface, modal]
+  );
+  const time = useMemo(() => toDate(rawTime), [rawTime]);
+
+  // A click on a rendered button fires the payload it stands for. Capture
+  // phase, scoped to the blocks, so the modal's own Cancel / Submit and
+  // controls like the carousel arrows never register.
+  const onClickCapture: ClickHandler | undefined = onInteraction
+    ? (event) => {
+        const button = (event.target as HTMLElement).closest('button');
+        if (!button || !event.currentTarget.contains(button)) return;
+        const payload = matchClickedLabel(interactions, button.textContent ?? '');
+        if (payload) onInteraction(payload);
+      }
+    : undefined;
 
   const canvas = CANVAS[theme];
-  const chrome = (body: React.ReactNode) => (
+  const frame = (body: React.ReactNode) => {
     // Outer width = surface width + canvas padding (20px on each side) so
     // the rendered surface inside still matches Slack's per-surface width.
-    <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] + 40 }}>
-      <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} />
-      {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
-      <UnsafeUrlNotice removed={removed} fontFamily={FONT_STACK} />
+    const surfaceNode = (
       <div
         style={{
           padding: 20,
@@ -211,14 +228,30 @@ export function Renderer({
       >
         {body}
       </div>
-      <InteractionsPanel interactions={interactions} onInteraction={onInteraction} colors={c} fontFamily={FONT_STACK} />
-    </div>
-  );
+    );
+    return (
+      <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] + 40 }}>
+        {chrome ? <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} /> : null}
+        {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
+        {chrome ? <UnsafeUrlNotice removed={removed} fontFamily={FONT_STACK} /> : null}
+        {surfaceNode}
+        {chrome ? (
+          <InteractionsPanel
+            interactions={interactions}
+            onInteraction={onInteraction}
+            colors={c}
+            fontFamily={FONT_STACK}
+          />
+        ) : null}
+      </div>
+    );
+  };
 
   if (surface === 'modal') {
     // Modals in Slack don't carry a message envelope (no avatar / app
     // name / timestamp), so render the blocks bare inside the modal body.
-    return chrome(
+    const submit = modal?.submit === false ? null : (modal?.submit ?? 'Submit');
+    return frame(
       <div
         style={{
           background: c.bg,
@@ -236,10 +269,10 @@ export function Renderer({
             fontSize: 15
           }}
         >
-          Modal title
+          {modal?.title ?? 'Modal title'}
         </div>
         <div style={{ padding: 16 }}>
-          <SurfaceBody blocks={drawn} theme={theme} hooks={hooks} />
+          <SurfaceBody blocks={drawn} theme={theme} hooks={hooks} time={time} onClickCapture={onClickCapture} />
         </div>
         <div
           style={{
@@ -261,21 +294,23 @@ export function Renderer({
               cursor: 'pointer'
             }}
           >
-            Cancel
+            {modal?.close ?? 'Cancel'}
           </button>
-          <button
-            type="button"
-            style={{
-              padding: '6px 12px',
-              borderRadius: 4,
-              border: 'none',
-              background: c.accent,
-              color: '#ffffff',
-              cursor: 'pointer'
-            }}
-          >
-            Submit
-          </button>
+          {submit ? (
+            <button
+              type="button"
+              style={{
+                padding: '6px 12px',
+                borderRadius: 4,
+                border: 'none',
+                background: c.accent,
+                color: '#ffffff',
+                cursor: 'pointer'
+              }}
+            >
+              {submit}
+            </button>
+          ) : null}
         </div>
       </div>
     );
@@ -292,7 +327,7 @@ export function Renderer({
       cursor: 'default' as const,
       borderBottom: '2px solid transparent'
     };
-    return chrome(
+    return frame(
       <div
         style={{
           background: c.bg,
@@ -316,7 +351,7 @@ export function Renderer({
           <div style={{ ...tabBase, color: c.muted }}>About</div>
         </div>
         <div style={{ padding: 16 }}>
-          <SurfaceBody blocks={drawn} theme={theme} hooks={hooks} />
+          <SurfaceBody blocks={drawn} theme={theme} hooks={hooks} time={time} onClickCapture={onClickCapture} />
         </div>
       </div>
     );
@@ -325,7 +360,7 @@ export function Renderer({
   // Default: `message` surface — render blocks inside the full Slack
   // message envelope (avatar + app name + timestamp header) so the
   // preview matches how a posted message will look in a channel.
-  return chrome(
+  return frame(
     <div
       style={{
         background: c.bg,
@@ -335,9 +370,14 @@ export function Renderer({
         padding: 16
       }}
     >
-      <div id="slack_blocks_to_jsx" data-theme={theme} className="slack_blocks_to_jsx styles_enabled">
+      <div
+        id="slack_blocks_to_jsx"
+        data-theme={theme}
+        className="slack_blocks_to_jsx styles_enabled"
+        onClickCapture={onClickCapture}
+      >
         <Message
-          time={new Date()}
+          time={time}
           name={name}
           logo={logo}
           theme={theme}

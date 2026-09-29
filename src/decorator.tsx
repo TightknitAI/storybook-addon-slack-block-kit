@@ -1,29 +1,10 @@
 import type { Decorator } from '@storybook/react-vite';
-import { GLOBAL_SURFACE_KEY, GLOBAL_THEME_KEY, PARAM_KEY } from './constants';
+import { action } from 'storybook/actions';
+import { useChannel } from 'storybook/preview-api';
+import { EVENT_SIMULATE, GLOBAL_SURFACE_KEY, GLOBAL_THEME_KEY, PARAM_KEY } from './constants';
 import { Renderer } from './renderer';
-import type { SlackBlocksParameter, SlackBlocksParameterObject, SlackPreviewSurface, SlackPreviewTheme } from './types';
-
-/**
- * Coerces every supported `slackBlocks` shape into the object form the
- * renderer expects:
- *  - bare `Block[]`  → `{ blocks }`
- *  - object form     → passthrough
- *  - function form   → invoked with the story's args, then re-coerced
- *
- * Returns `null` when no preview should render (e.g. parameter unset or
- * function returned an empty/invalid value).
- */
-function normalize(
-  param: SlackBlocksParameter | undefined | null,
-  args: Record<string, unknown> | undefined
-): SlackBlocksParameterObject | null {
-  if (!param) return null;
-  if (typeof param === 'function') {
-    return normalize(param(args ?? {}), args);
-  }
-  if (Array.isArray(param)) return { blocks: param };
-  return param;
-}
+import { resolveParameter } from './resolve';
+import type { SlackBlocksParameter, SlackInteractionPayload, SlackPreviewSurface, SlackPreviewTheme } from './types';
 
 /**
  * Per-story Storybook decorator that renders a Slack preview below the
@@ -32,33 +13,33 @@ function normalize(
  * Three ways for a story to supply blocks:
  *  1. `parameters.slackBlocks: Block[]` — most common.
  *  2. `parameters.slackBlocks: { blocks, theme?, surface?, ... }` — for
- *     per-story overrides + `onInteraction` wiring.
+ *     per-story overrides, envelope details and `onInteraction` wiring.
  *  3. `parameters.slackBlocks: (args) => Block[] | { blocks, ... }` —
  *     derive blocks from Storybook Controls so designers can tweak text /
  *     options live.
  *
  * If the parameter is unset, the decorator falls back to `args.blocks`
  * (the story-arg form) so components that already expose a `blocks` arg
- * get a free preview.
+ * get a free preview. See `./resolve`.
  *
  * Theme and surface fall back to Storybook globals
  * (`slackTheme`, `slackSurface`) so the toolbar dropdowns flip every
  * story at once.
+ *
+ * Interactions — a click on a rendered button, or "Simulate" in the addon
+ * panel — go to the story's `onInteraction` and to the Actions panel.
  */
 export const withSlackPreview: Decorator = (StoryFn, context) => {
   const raw = context.parameters?.[PARAM_KEY] as SlackBlocksParameter | null | undefined;
-  // Explicit opt-out: `parameters.slackBlocks = false`. Suppresses the
-  // args.blocks fallback below so showcase stories whose component already
-  // renders a Slack preview (e.g. SlackPreview itself) don't double up.
-  if (raw === false) return <StoryFn />;
-  const args = context.args as Record<string, unknown> | undefined;
-  const argBlocks = (args as { blocks?: unknown } | undefined)?.blocks;
-  const fromArgs = Array.isArray(argBlocks) ? (argBlocks as SlackBlocksParameter) : undefined;
+  const param = resolveParameter(raw, context.args as Record<string, unknown> | undefined);
 
-  const param = normalize(raw ?? null, args) ?? normalize(fromArgs, args);
-  if (!param) return <StoryFn />;
+  const fire = (payload: SlackInteractionPayload) => {
+    param?.onInteraction?.(payload);
+    action(`slack: ${payload.type}${payload.action_id ? ` ${payload.action_id}` : ''}`)(payload);
+  };
+  useChannel({ [EVENT_SIMULATE]: fire }, [param]);
 
-  if (param.layout === 'panel-only') return <StoryFn />;
+  if (!param || param.layout === 'panel-only') return <StoryFn />;
 
   const globals = context.globals as Record<string, unknown> | undefined;
   const theme: SlackPreviewTheme =
@@ -74,8 +55,13 @@ export const withSlackPreview: Decorator = (StoryFn, context) => {
         theme={theme}
         surface={surface}
         hooks={param.hooks}
+        name={param.name}
+        logo={param.logo}
+        time={param.time}
+        modal={param.modal}
+        chrome={param.chrome}
         validate={param.validate}
-        onInteraction={param.onInteraction}
+        onInteraction={fire}
       />
     </div>
   );

@@ -1,22 +1,12 @@
 import { createElement as h, useMemo, useState } from 'react';
-import { useArgs, useGlobals, useParameter } from 'storybook/manager-api';
+import { useArgs, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
 import { buildBlockKitBuilderUrl } from './builder-url';
-import { GLOBAL_SURFACE_KEY, PARAM_KEY } from './constants';
+import { EVENT_SIMULATE, GLOBAL_SURFACE_KEY, PARAM_KEY } from './constants';
+import { extractInteractions } from './interactions';
+import { resolveParameter } from './resolve';
 import { sanitizeBlockUrls } from './sanitize';
-import type { SlackBlocksParameter, SlackBlocksParameterObject, SlackPreviewSurface } from './types';
+import type { SlackBlocksParameter, SlackInteractionPayload, SlackPreviewSurface } from './types';
 import { validateForSurface } from './validate';
-
-function coerce(
-  param: SlackBlocksParameter | null,
-  args: Record<string, unknown> | undefined
-): SlackBlocksParameterObject | null {
-  if (!param) return null;
-  if (typeof param === 'function') {
-    return coerce(param(args ?? {}), args);
-  }
-  if (Array.isArray(param)) return { blocks: param };
-  return param;
-}
 
 const btnStyle: React.CSSProperties = {
   padding: '4px 10px',
@@ -30,20 +20,83 @@ const btnStyle: React.CSSProperties = {
   display: 'inline-block'
 };
 
+const codeStyle: React.CSSProperties = { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 };
+
 /**
- * Addon-panel content shown in the Storybook manager.
+ * The current story's payload as the panel sees it: resolved the same way
+ * the preview decorator resolves it (`./resolve`), sanitized the same way
+ * the renderer sanitizes it, and validated for the surface it's drawn on.
+ * Shared by the panel body and its tab title.
+ */
+function useSlackStory() {
+  const raw = useParameter<SlackBlocksParameter | null>(PARAM_KEY, null);
+  const [args] = useArgs();
+  const [globals] = useGlobals();
+  const normalized = useMemo(() => resolveParameter(raw, args as Record<string, unknown> | undefined), [raw, args]);
+  const surface: SlackPreviewSurface =
+    normalized?.surface ?? (globals[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) ?? 'message';
+
+  const { blocks, removed } = useMemo(
+    () => (normalized ? sanitizeBlockUrls(normalized.blocks) : { blocks: [], removed: [] }),
+    [normalized]
+  );
+  const validation = useMemo(() => {
+    if (!normalized || normalized.validate === false) return null;
+    return validateForSurface(blocks, surface, normalized.modal);
+  }, [normalized, blocks, surface]);
+  const interactions = useMemo(() => extractInteractions(blocks), [blocks]);
+
+  return { normalized, surface, blocks, removed, validation, interactions };
+}
+
+/**
+ * Panel tab title. Carries the validation verdict so a broken payload is
+ * visible without opening the panel — the canvas itself stays clean.
+ */
+export function PanelTitle() {
+  const { normalized, validation } = useSlackStory();
+  const issues = validation?.valid === false ? validation.errors.length : 0;
+  if (!normalized || issues === 0) return h('span', null, 'Slack Block Kit');
+  return h(
+    'span',
+    null,
+    'Slack Block Kit ',
+    h(
+      'span',
+      {
+        style: {
+          marginLeft: 4,
+          padding: '0 6px',
+          borderRadius: 8,
+          fontSize: 11,
+          fontWeight: 700,
+          color: '#fff',
+          background: '#d1242f'
+        },
+        'aria-label': `${issues} validation ${issues === 1 ? 'issue' : 'issues'}`
+      },
+      issues
+    )
+  );
+}
+
+/**
+ * Addon-panel content shown in the Storybook manager. Everything about the
+ * payload that isn't the Slack UI itself lives here, so the canvas can be
+ * just the rendered surface:
  *
- * **What the panel does**: validates the current story's `slackBlocks`
- * against `@tightknitai/slack-block-kit-validator`, lists any issues
- * field-by-field, and offers a Copy-JSON button + Block Kit Builder
- * deeplink so engineers can move the payload into adjacent tools.
+ *  - Copy JSON + Block Kit Builder deeplink
+ *  - the validation report from `@tightknitai/slack-block-kit-validator`
+ *  - URLs the sanitizer stripped
+ *  - every interactive element, each with a "Simulate" button that sends
+ *    the payload to the preview (`EVENT_SIMULATE`), where the decorator
+ *    calls the story's `onInteraction` and logs it to the Actions panel
  *
- * **What the panel does NOT do (v0 holdover)**: render the Slack preview
- * itself. The renderer depends on `slack-blocks-to-jsx`, which
- * transitively pulls in `emojilib` — a CJS module that the Storybook
- * manager-side esbuild bundle can't resolve cleanly. The decorator
- * (preview-side) does the real rendering inline. The validator has no
- * such dep so it works fine in the manager bundle.
+ * **What the panel does NOT do**: render the Slack preview itself. The
+ * renderer depends on `slack-blocks-to-jsx`, which transitively pulls in
+ * `emojilib` — a CJS module that the Storybook manager-side esbuild bundle
+ * can't resolve cleanly. The validator has no such dep so it works fine in
+ * the manager bundle.
  *
  * **Why this file uses `createElement` (`h`) directly instead of JSX**:
  * the Storybook 10 manager bundle externalizes `react` as `__REACT__` but
@@ -56,26 +109,10 @@ const btnStyle: React.CSSProperties = {
  * See AGENTS.md → "Known risks → Manager-side rendering" for follow-up.
  */
 export function Panel() {
-  const raw = useParameter<SlackBlocksParameter | null>(PARAM_KEY, null);
-  const [args] = useArgs();
-  const [globals] = useGlobals();
-  const surface = (globals[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) ?? 'message';
+  const { normalized, surface: effectiveSurface, blocks, removed, validation, interactions } = useSlackStory();
   const [copied, setCopied] = useState(false);
-
-  const normalized = useMemo(() => coerce(raw, args as Record<string, unknown> | undefined), [raw, args]);
-  const effectiveSurface = normalized?.surface ?? surface;
-
-  // Same allowlist the renderer applies, so the panel validates, copies
-  // and deeplinks exactly the payload the preview drew.
-  const { blocks, removed } = useMemo(
-    () => (normalized ? sanitizeBlockUrls(normalized.blocks) : { blocks: [], removed: [] }),
-    [normalized]
-  );
-
-  const validation = useMemo(() => {
-    if (!normalized || normalized.validate === false) return null;
-    return validateForSurface(blocks, effectiveSurface);
-  }, [normalized, blocks, effectiveSurface]);
+  const [firedIdx, setFiredIdx] = useState<number | null>(null);
+  const emit = useChannel({});
 
   if (!normalized) {
     return h(
@@ -137,7 +174,7 @@ export function Panel() {
       h('strong', null, blockCount),
       ` Slack ${blockCount === 1 ? 'block' : 'blocks'} on the `,
       h('code', null, effectiveSurface),
-      ' surface. Preview renders inline below the story body.'
+      ' surface.'
     ),
     h(
       'div',
@@ -207,17 +244,7 @@ export function Panel() {
                 'ul',
                 { style: { margin: 0, paddingLeft: 20 } },
                 validation.errors.map((err) =>
-                  h(
-                    'li',
-                    { key: err, style: { marginTop: 2 } },
-                    h(
-                      'code',
-                      {
-                        style: { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 }
-                      },
-                      err
-                    )
-                  )
+                  h('li', { key: err, style: { marginTop: 2 } }, h('code', { style: codeStyle }, err))
                 )
               )
             )
@@ -248,10 +275,54 @@ export function Panel() {
             'ul',
             { style: { margin: 0, paddingLeft: 20 } },
             removed.map((url, idx) =>
+              h('li', { key: `${url}-${idx}`, style: { marginTop: 2 } }, h('code', { style: codeStyle }, url))
+            )
+          )
+        )
+      : null;
+
+  const simulate = (payload: SlackInteractionPayload, idx: number) => () => {
+    emit(EVENT_SIMULATE, payload);
+    setFiredIdx(idx);
+    setTimeout(() => setFiredIdx((current) => (current === idx ? null : current)), 1500);
+  };
+
+  const interactionsNode =
+    interactions.length > 0
+      ? h(
+          'div',
+          { style: { marginTop: 16 } },
+          h('div', { style: { fontWeight: 600, marginBottom: 4 } }, `Interactions (${interactions.length})`),
+          h(
+            'p',
+            { style: { margin: '0 0 8px', fontSize: 12, color: 'var(--colors-secondary, #777)' } },
+            'Click a button in the preview, or simulate any element here. Payloads go to ',
+            h('code', null, 'onInteraction'),
+            ' and the Actions panel.'
+          ),
+          h(
+            'ul',
+            { style: { listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 4 } },
+            interactions.map((i, idx) =>
               h(
                 'li',
-                { key: `${url}-${idx}`, style: { marginTop: 2 } },
-                h('code', { style: { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 } }, url)
+                {
+                  key: `${i.action_id ?? 'noid'}-${idx}`,
+                  style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }
+                },
+                h(
+                  'code',
+                  { style: { fontSize: 12 } },
+                  i.type,
+                  i.action_id ? ` · action_id="${i.action_id}"` : '',
+                  i.value ? ` · value="${i.value}"` : '',
+                  i.label ? ` · "${i.label}"` : ''
+                ),
+                h(
+                  'button',
+                  { type: 'button', onClick: simulate(i, idx), style: btnStyle, 'aria-live': 'polite' },
+                  firedIdx === idx ? 'Fired ✓' : 'Simulate'
+                )
               )
             )
           )
@@ -275,6 +346,7 @@ export function Panel() {
     summary,
     validationNode,
     unsafeUrlNode,
+    interactionsNode,
     disabledNote
   );
 }

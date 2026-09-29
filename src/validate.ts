@@ -4,7 +4,7 @@ import {
   validateBlockKit
 } from '@tightknitai/slack-block-kit-validator';
 import type { Block } from 'slack-blocks-to-jsx';
-import type { SlackPreviewSurface } from './types';
+import type { SlackEnvelopeOptions, SlackPreviewSurface } from './types';
 
 /**
  * Thin wrapper that maps the addon's surface vocabulary onto the
@@ -18,17 +18,22 @@ import type { SlackPreviewSurface } from './types';
  * Failures from the validator are intentionally surfaced as plain strings;
  * see `@tightknitai/slack-block-kit-validator` for the exact wording.
  */
-export function validateForSurface(blocks: Block[], surface: SlackPreviewSurface): ValidationResult {
+export function validateForSurface(
+  blocks: Block[],
+  surface: SlackPreviewSurface,
+  modal: SlackEnvelopeOptions['modal'] = {}
+): ValidationResult {
   if (surface === 'modal') {
-    // `submit` / `close` match the Cancel / Submit footer the renderer
-    // draws. Slack requires `submit` on any modal holding an input block,
-    // so leaving it off flagged every form story as invalid.
+    // Same title / submit / close the renderer draws in the modal chrome.
+    // Slack requires `submit` on any modal holding an input block, so a
+    // story that drops it (`submit: false`) is held to that too.
+    const submit = modal.submit === false ? undefined : (modal.submit ?? 'Submit');
     return validateBlockKit(
       {
         type: 'modal',
-        title: { type: 'plain_text', text: 'Preview' },
-        submit: { type: 'plain_text', text: 'Submit' },
-        close: { type: 'plain_text', text: 'Cancel' },
+        title: { type: 'plain_text', text: modal.title ?? 'Modal title' },
+        ...(submit ? { submit: { type: 'plain_text', text: submit } } : {}),
+        close: { type: 'plain_text', text: modal.close ?? 'Cancel' },
         blocks
       },
       { target: 'modal' } satisfies ValidateBlockKitOptions
