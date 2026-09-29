@@ -3,6 +3,7 @@ import 'slack-blocks-to-jsx/dist/style.css';
 import { useMemo } from 'react';
 import { type Block, Message } from 'slack-blocks-to-jsx';
 import { extractInteractions } from './interactions';
+import { normalizeForRender } from './normalize';
 import { InteractionsPanel, PreviewToolbar, UnsafeUrlNotice, ValidationBanner } from './preview-chrome';
 import { isSafeUrl, sanitizeBlockUrls } from './sanitize';
 import type { SlackInteractionPayload, SlackPreviewHooks, SlackPreviewSurface, SlackPreviewTheme } from './types';
@@ -184,6 +185,9 @@ export function Renderer({
     [blocks, surface, validate]
   );
   const interactions = useMemo(() => extractInteractions(blocks), [blocks]);
+  // What actually gets drawn: `data_table` translated into a `table`,
+  // unknown block types swapped for a visible placeholder. See ./normalize.
+  const drawn = useMemo(() => normalizeForRender(blocks), [blocks]);
 
   const canvas = CANVAS[theme];
   const chrome = (body: React.ReactNode) => (
@@ -235,7 +239,7 @@ export function Renderer({
           Modal title
         </div>
         <div style={{ padding: 16 }}>
-          <SurfaceBody blocks={blocks} theme={theme} hooks={hooks} />
+          <SurfaceBody blocks={drawn} theme={theme} hooks={hooks} />
         </div>
         <div
           style={{
@@ -312,7 +316,7 @@ export function Renderer({
           <div style={{ ...tabBase, color: c.muted }}>About</div>
         </div>
         <div style={{ padding: 16 }}>
-          <SurfaceBody blocks={blocks} theme={theme} hooks={hooks} />
+          <SurfaceBody blocks={drawn} theme={theme} hooks={hooks} />
         </div>
       </div>
     );
@@ -337,7 +341,7 @@ export function Renderer({
           name={name}
           logo={logo}
           theme={theme}
-          blocks={blocks}
+          blocks={drawn}
           hooks={hooks as Record<string, unknown> | undefined}
         />
       </div>

@@ -20,9 +20,19 @@ import type { SlackPreviewSurface } from './types';
  */
 export function validateForSurface(blocks: Block[], surface: SlackPreviewSurface): ValidationResult {
   if (surface === 'modal') {
-    return validateBlockKit({ type: 'modal', title: { type: 'plain_text', text: 'Preview' }, blocks }, {
-      target: 'modal'
-    } satisfies ValidateBlockKitOptions);
+    // `submit` / `close` match the Cancel / Submit footer the renderer
+    // draws. Slack requires `submit` on any modal holding an input block,
+    // so leaving it off flagged every form story as invalid.
+    return validateBlockKit(
+      {
+        type: 'modal',
+        title: { type: 'plain_text', text: 'Preview' },
+        submit: { type: 'plain_text', text: 'Submit' },
+        close: { type: 'plain_text', text: 'Cancel' },
+        blocks
+      },
+      { target: 'modal' } satisfies ValidateBlockKitOptions
+    );
   }
   if (surface === 'home') {
     return validateBlockKit({ type: 'home', blocks }, { target: 'home' } satisfies ValidateBlockKitOptions);

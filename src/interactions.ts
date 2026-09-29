@@ -68,7 +68,22 @@ function pushFrom(block: Record<string, unknown>, el: ElementLike, out: SlackInt
  */
 export function extractInteractions(blocks: Block[]): SlackInteractionPayload[] {
   const out: SlackInteractionPayload[] = [];
-  for (const block of blocks as Array<Record<string, unknown>>) {
+  collect(blocks as Array<Record<string, unknown>>, out);
+  return out;
+}
+
+function collect(blocks: Array<Record<string, unknown>>, out: SlackInteractionPayload[]): void {
+  for (const block of blocks) {
+    // `container` nests whole blocks; `carousel` nests `card` blocks.
+    if (block.type === 'container' && Array.isArray(block.child_blocks)) {
+      collect(block.child_blocks as Array<Record<string, unknown>>, out);
+    }
+    if (block.type === 'carousel' && Array.isArray(block.elements)) {
+      collect(block.elements as Array<Record<string, unknown>>, out);
+    }
+    if (block.type === 'card' && Array.isArray(block.actions)) {
+      for (const el of block.actions as ElementLike[]) pushFrom(block, el, out);
+    }
     if (block.type === 'actions' && Array.isArray(block.elements)) {
       for (const el of block.elements as ElementLike[]) pushFrom(block, el, out);
     }
@@ -82,5 +97,4 @@ export function extractInteractions(blocks: Block[]): SlackInteractionPayload[] 
       for (const el of block.elements as ElementLike[]) pushFrom(block, el, out);
     }
   }
-  return out;
 }
