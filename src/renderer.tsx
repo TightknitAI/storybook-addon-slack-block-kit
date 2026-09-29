@@ -176,6 +176,7 @@ export function Renderer({
   logo = DEFAULT_LOGO,
   time: rawTime,
   modal,
+  width,
   chrome = false,
   validate = true,
   onInteraction
@@ -210,9 +211,10 @@ export function Renderer({
     : undefined;
 
   const canvas = CANVAS[theme];
+  // Outer width = surface width + canvas padding (20px on each side).
+  const frameWidth =
+    width === 'full' ? 'none' : (typeof width === 'number' && width > 0 ? width : SURFACE_WIDTH[surface]) + 40;
   const frame = (body: React.ReactNode) => {
-    // Outer width = surface width + canvas padding (20px on each side) so
-    // the rendered surface inside still matches Slack's per-surface width.
     const surfaceNode = (
       <div
         style={{
@@ -230,7 +232,7 @@ export function Renderer({
       </div>
     );
     return (
-      <div style={{ fontFamily: FONT_STACK, maxWidth: SURFACE_WIDTH[surface] + 40 }}>
+      <div style={{ fontFamily: FONT_STACK, maxWidth: frameWidth }}>
         {chrome ? <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} /> : null}
         {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
         {chrome ? <UnsafeUrlNotice removed={removed} fontFamily={FONT_STACK} /> : null}

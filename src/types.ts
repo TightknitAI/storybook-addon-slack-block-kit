@@ -57,6 +57,13 @@ export interface SlackInteractionPayload {
  * your real app so a screenshot of the story reads as the real thing.
  */
 export interface SlackEnvelopeOptions {
+  /**
+   * Surface width in px, or `'full'` to fill the canvas. Defaults to
+   * roughly Slack's own: 600 for a message, 520 for a modal, 660 for App
+   * Home. The real Home tab fills the whole conversation pane, so widen it
+   * to see a Home layout the way users do.
+   */
+  width?: number | 'full';
   /** App name in the message envelope. Defaults to "Storybook App". */
   name?: string;
   /** Avatar URL in the message envelope. Defaults to an inline Slack-style "S". */

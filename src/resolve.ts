@@ -23,9 +23,10 @@ function coerce(
  *  - bare `Block[]`  → `{ blocks }`
  *  - object form     → passthrough
  *  - function form   → called with the story's args, then re-coerced
- *  - unset           → falls back to `args.blocks` (plus `args.theme` /
- *                      `args.surface`), so a component that already takes a
- *                      `blocks` arg gets a preview for free
+ *  - unset           → falls back to `args.blocks` (plus `args.theme`,
+ *                      `args.surface` and `args.width`), so a component
+ *                      that already takes a `blocks` arg gets a preview
+ *                      for free
  *  - `false`         → opted out; `null`
  *
  * Returns `null` when the story has nothing to preview.
@@ -42,6 +43,9 @@ export function resolveParameter(
   return {
     blocks: a.blocks as Block[],
     ...(THEMES.has(a.theme as string) ? { theme: a.theme as SlackBlocksParameterObject['theme'] } : {}),
-    ...(SURFACES.has(a.surface as string) ? { surface: a.surface as SlackBlocksParameterObject['surface'] } : {})
+    ...(SURFACES.has(a.surface as string) ? { surface: a.surface as SlackBlocksParameterObject['surface'] } : {}),
+    ...(a.width === 'full' || (typeof a.width === 'number' && a.width > 0)
+      ? { width: a.width as SlackBlocksParameterObject['width'] }
+      : {})
   };
 }

@@ -9,7 +9,7 @@ A Storybook 10 addon that renders Slack Block Kit JSON the way Slack would, vali
 - ✅ **Clean canvas** — the canvas is just the rendered surface. Everything else lives in the **Slack Block Kit** addon panel, so a screenshot of a story is a screenshot of Slack.
 - ✅ **Live validation** — every preview runs through [`@tightknitai/slack-block-kit-validator`](https://www.npmjs.com/package/@tightknitai/slack-block-kit-validator). The full report is in the addon panel, and the panel's tab shows the issue count, so you catch malformed payloads at story-time instead of in production.
 - ✅ **Interactions** — click a button in the preview, or "Simulate" any button / select / datepicker from the panel. Each fires a payload shaped like what Slack would POST to your interactivity endpoint, to your `onInteraction` and to Storybook's Actions panel.
-- ✅ **Your envelope** — set the app name, avatar, timestamp and modal title / buttons per story so previews match your real app.
+- ✅ **Your envelope** — set the app name, avatar, timestamp, modal title / buttons and surface width per story so previews match your real app (App Home can go as wide as Slack's Home tab).
 - ✅ **Args-driven blocks** — pass a function for `parameters.slackBlocks` to derive blocks from story args, so Storybook Controls drive the preview live.
 - ✅ **Open in Block Kit Builder** — one-click handoff to Slack's hosted editor with the payload preloaded.
 - ✅ **Copy as JSON** — grab the rendered payload to paste into Postman, a webhook test, or a `chat.postMessage` call.
@@ -92,6 +92,7 @@ parameters: {
     logo: 'https://example.com/avatar.png',  // app avatar
     time: '2026-09-29T15:04:00Z',            // pin the timestamp so snapshots don't drift
     modal: { title: 'Invite teammates', submit: 'Send', close: 'Not now' }, // submit: false hides it
+    width: 960,                              // px, or 'full' to fill the canvas — Slack's Home tab is wide
 
     onInteraction: (payload) => {
       // fires when a button is clicked in the preview, or an element is

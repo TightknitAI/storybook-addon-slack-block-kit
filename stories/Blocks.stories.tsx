@@ -24,7 +24,8 @@ const meta = {
   parameters: { layout: 'padded' },
   argTypes: {
     theme: { control: { type: 'inline-radio' }, options: ['light', 'dark'] },
-    surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'home'] }
+    surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'home'] },
+    width: { control: { type: 'select' }, options: [520, 600, 660, 800, 960, 'full'] }
   }
 } satisfies Meta<typeof SlackPreview>;
 

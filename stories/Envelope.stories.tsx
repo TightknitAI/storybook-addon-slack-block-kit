@@ -4,8 +4,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
  * Snapshot-ready stories: no host component, just the Slack surface, with
  * the envelope set to match a real app — app name, a pinned timestamp so
  * the screenshot doesn't change between runs, and the modal's own title
- * and button labels. Validation, interactions and Copy JSON stay in the
- * Slack Block Kit panel, out of the frame.
+ * and button labels. App Home is widened, because Slack's Home tab fills the
+ * whole conversation pane (`width: 'full'` fills the canvas instead).
+ * Validation, interactions and Copy JSON stay in the Slack Block Kit panel,
+ * out of the frame.
  */
 const meta = {
   title: 'Addon/Envelope',
@@ -66,6 +68,58 @@ export const Modal: Story = {
           label: { type: 'plain_text', text: 'Personal note' },
           element: { type: 'plain_text_input', action_id: 'note', multiline: true }
         }
+      ]
+    }
+  }
+};
+
+export const AppHome: Story = {
+  parameters: {
+    slackBlocks: {
+      surface: 'home' as const,
+      width: 960,
+      blocks: [
+        { type: 'header', text: { type: 'plain_text', text: 'Welcome back, Alice 👋' } },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: '*Your community this week*\n12 new members joined and 3 events are coming up. Here’s what needs your attention.'
+          },
+          accessory: {
+            type: 'button',
+            style: 'primary',
+            text: { type: 'plain_text', text: 'Open dashboard' },
+            action_id: 'open_dashboard'
+          }
+        },
+        { type: 'divider' },
+        {
+          type: 'section',
+          fields: [
+            { type: 'mrkdwn', text: '*New members*\n12' },
+            { type: 'mrkdwn', text: '*Posts*\n48' },
+            { type: 'mrkdwn', text: '*Upcoming events*\n3' },
+            { type: 'mrkdwn', text: '*Unanswered questions*\n5' }
+          ]
+        },
+        {
+          type: 'actions',
+          elements: [
+            { type: 'button', text: { type: 'plain_text', text: 'Review questions' }, action_id: 'questions' },
+            { type: 'button', text: { type: 'plain_text', text: 'Plan an event' }, action_id: 'plan_event' },
+            {
+              type: 'static_select',
+              action_id: 'range',
+              placeholder: { type: 'plain_text', text: 'This week' },
+              options: [
+                { text: { type: 'plain_text', text: 'This week' }, value: 'week' },
+                { text: { type: 'plain_text', text: 'This month' }, value: 'month' }
+              ]
+            }
+          ]
+        },
+        { type: 'context', elements: [{ type: 'mrkdwn', text: 'Updated every morning at 9am · Tightknit' }] }
       ]
     }
   }

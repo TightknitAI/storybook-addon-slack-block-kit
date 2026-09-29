@@ -59,6 +59,7 @@ export const withSlackPreview: Decorator = (StoryFn, context) => {
         logo={param.logo}
         time={param.time}
         modal={param.modal}
+        width={param.width}
         chrome={param.chrome}
         validate={param.validate}
         onInteraction={fire}

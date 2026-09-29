@@ -113,3 +113,22 @@ it('validates a modal against the Submit button it actually draws', () => {
   expect(validateForSurface(form, 'modal').valid).toBe(true);
   expect(validateForSurface(form, 'modal', { submit: false }).valid).toBe(false);
 });
+
+describe('width', () => {
+  const frame = (html: string) => html.match(/max-width:([^;"]+)/)?.[1];
+
+  it('defaults to the surface’s own width', () => {
+    expect(frame(render({ surface: 'home' }))).toBe('700px');
+    expect(frame(render({ surface: 'modal' }))).toBe('560px');
+  });
+
+  it('takes a pixel width, or fills the canvas with "full"', () => {
+    expect(frame(render({ surface: 'home', width: 960 }))).toBe('1000px');
+    expect(frame(render({ surface: 'home', width: 'full' }))).toBe('none');
+  });
+
+  it('carries args.width through the args fallback', () => {
+    expect(resolveParameter(undefined, { blocks, width: 'full' })?.width).toBe('full');
+    expect(resolveParameter(undefined, { blocks, width: -1 })?.width).toBeUndefined();
+  });
+});
