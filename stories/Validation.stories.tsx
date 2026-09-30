@@ -1,9 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 /**
- * Demonstrates the live validation banner. The addon runs every preview
- * through `@tightknitai/slack-block-kit-validator` and shows findings
- * inline (above the preview) and in the addon panel (full report).
+ * Demonstrates live validation. The addon runs every preview through
+ * `@tightknitai/slack-block-kit-validator`; the Slack Block Kit panel shows
+ * the full report and its tab carries the issue count.
  *
  * The "Invalid" stories below intentionally violate documented Slack
  * rules so you can watch the validator catch them at story-time.
@@ -22,7 +22,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Valid: Story = {
-  args: { note: 'Healthy payload — green banner, no panel errors.' },
+  args: { note: 'Healthy payload — no issue count on the Slack Block Kit panel.' },
   parameters: {
     slackBlocks: [{ type: 'section', text: { type: 'mrkdwn', text: '*All good*' } }, { type: 'divider' }]
   }

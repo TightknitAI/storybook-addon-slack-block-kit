@@ -1,28 +1,31 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
+import type { Block } from 'slack-blocks-to-jsx';
+
 import { SlackPreview } from '../src/blocks';
 
 /**
- * Block catalog — one story per Block Kit block type rendered by
- * `slack-blocks-to-jsx@1.0.4`. Mirrors the 14 blocks `@tightknitai/block-kit-builder`
- * catalogs (section, header, divider, context, actions, image, markdown, rich_text,
- * table, alert, card, carousel, context_actions, input) plus the four extra blocks
- * the renderer supports out of the box (file, video, plan, task_card).
+ * Block catalog — one story per block type in Slack's Block Kit reference
+ * (https://docs.slack.dev/reference/block-kit/blocks), all 21 of them. Every type
+ * except `data_table` is drawn by `slack-blocks-to-jsx`; `data_table` goes through
+ * the addon's own translation in `src/normalize.ts`.
  *
- * Each story passes a single block in `args.blocks`, so the Controls panel doubles
- * as a JSON inspector. KitchenSink composes many blocks at once to verify they
+ * Each story passes its blocks in `args.blocks`, so the Controls panel doubles as a
+ * JSON inspector. KitchenSink composes many blocks at once to verify they
  * coexist on a single surface.
  */
 const meta = {
   title: 'Slack Blocks',
   component: SlackPreview,
-  // Opt the catalog out of the decorator — `SlackPreview` already renders
-  // a preview from `args.blocks`, so the auto-fallback in `withSlackPreview`
-  // would draw a second copy below the first.
-  parameters: { layout: 'padded', slackBlocks: false },
+  // The addon's decorator draws the preview from `args.blocks` (plus
+  // `args.theme` / `args.surface`) and feeds the panel, so the story itself
+  // renders nothing — rendering `SlackPreview` here too would draw it twice.
+  render: () => <></>,
+  parameters: { layout: 'padded' },
   argTypes: {
     theme: { control: { type: 'inline-radio' }, options: ['light', 'dark'] },
-    surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'app_home'] }
+    surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'home'] },
+    width: { control: { type: 'select' }, options: [520, 600, 660, 800, 960, 'full'] }
   }
 } satisfies Meta<typeof SlackPreview>;
 
@@ -250,8 +253,10 @@ export const Table: Story = {
   }
 };
 
+// Slack only supports `alert` in modals.
 export const Alert: Story = {
   args: {
+    surface: 'modal',
     blocks: [
       { type: 'alert', text: { type: 'mrkdwn', text: 'Build *#4821* passed on `main`.' }, level: 'success' },
       { type: 'alert', text: { type: 'mrkdwn', text: 'Cache hit rate dropped to 41%.' }, level: 'info' },
@@ -267,6 +272,7 @@ export const Card: Story = {
       {
         type: 'card',
         hero_image: {
+          type: 'image',
           image_url: 'https://placehold.co/600x240/png',
           alt_text: 'Card hero'
         },
@@ -290,7 +296,7 @@ export const Card: Story = {
           }
         ]
       }
-    ]
+    ] as unknown as Block[] // slack-blocks-to-jsx's `CardImage` omits Slack's `type: 'image'`
   }
 };
 
@@ -303,6 +309,7 @@ export const Carousel: Story = {
           {
             type: 'card',
             hero_image: {
+              type: 'image',
               image_url: 'https://placehold.co/400x200/png?text=Slide+1',
               alt_text: 'Slide 1'
             },
@@ -312,6 +319,7 @@ export const Carousel: Story = {
           {
             type: 'card',
             hero_image: {
+              type: 'image',
               image_url: 'https://placehold.co/400x200/png?text=Slide+2',
               alt_text: 'Slide 2'
             },
@@ -321,6 +329,7 @@ export const Carousel: Story = {
           {
             type: 'card',
             hero_image: {
+              type: 'image',
               image_url: 'https://placehold.co/400x200/png?text=Slide+3',
               alt_text: 'Slide 3'
             },
@@ -329,7 +338,7 @@ export const Carousel: Story = {
           }
         ]
       }
-    ]
+    ] as unknown as Block[] // slack-blocks-to-jsx's `CardImage` omits Slack's `type: 'image'`
   }
 };
 
@@ -361,8 +370,7 @@ export const ContextActions: Story = {
         ]
       }
     ]
-  },
-  parameters: { surface: 'message' }
+  }
 };
 
 export const Input: Story = {
@@ -421,7 +429,7 @@ export const File: Story = {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: '`file` blocks render a remote-file attachment. Slack only resolves them when posted via the API with a valid `external_id`; in a static preview the block falls back to a placeholder card.'
+          text: '`file` blocks can’t be sent by apps — Slack only includes them when you *retrieve* a message that shares a remote file. The validator flags it on every surface, and the preview draws nothing for it, because there’s no file metadata to show.'
         }
       },
       {
@@ -438,12 +446,12 @@ export const Video: Story = {
     blocks: [
       {
         type: 'video',
-        title: { type: 'plain_text', text: 'Big Buck Bunny', emoji: true },
+        title: { type: 'plain_text', text: 'Sample video', emoji: true },
         thumbnail_url: 'https://placehold.co/640x360/png?text=Thumbnail',
-        video_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        alt_text: 'Big Buck Bunny (sample video)',
-        title_url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        author_name: 'Blender Foundation',
+        video_url: 'https://www.youtube.com/embed/RRxQQxiM7AA?feature=oembed&autoplay=1',
+        alt_text: 'Sample video',
+        title_url: 'https://www.youtube.com/watch?v=RRxQQxiM7AA',
+        author_name: 'Slack',
         provider_name: 'Sample',
         description: { type: 'plain_text', text: 'A neutral sample video clip.', emoji: true }
       }
@@ -505,6 +513,254 @@ export const TaskCard: Story = {
         }
       }
     ]
+  }
+};
+
+export const Container: Story = {
+  args: {
+    blocks: [
+      {
+        type: 'container',
+        title: { type: 'plain_text', text: 'Bulk update: 2 records selected' },
+        subtitle: { type: 'plain_text', text: 'Review changes before confirming' },
+        is_collapsible: true,
+        child_blocks: [
+          {
+            type: 'section',
+            text: { type: 'mrkdwn', text: '*DCW-1024*\nStatus: Open → Closed\nAssignee: @alice → @carl' }
+          },
+          { type: 'divider' },
+          {
+            type: 'section',
+            text: { type: 'mrkdwn', text: '*DCW-1025*\nStatus: In Progress → Closed\nAssignee: @bob → @carl' }
+          },
+          {
+            type: 'context',
+            elements: [{ type: 'mrkdwn', text: ':white_check_mark: 2 records will be updated' }]
+          },
+          {
+            type: 'actions',
+            elements: [
+              {
+                type: 'button',
+                text: { type: 'plain_text', text: 'Confirm All', emoji: true },
+                style: 'primary',
+                action_id: 'bulk_confirm'
+              },
+              { type: 'button', text: { type: 'plain_text', text: 'Cancel', emoji: true }, action_id: 'bulk_cancel' }
+            ]
+          }
+        ]
+      },
+      {
+        type: 'container',
+        title: { type: 'plain_text', text: 'Collapsed by default' },
+        is_collapsible: true,
+        default_collapsed: true,
+        child_blocks: [{ type: 'section', text: { type: 'mrkdwn', text: 'Hidden until expanded.' } }]
+      },
+      {
+        type: 'container',
+        title: { type: 'plain_text', text: 'Static, wide' },
+        width: 'wide',
+        child_blocks: [{ type: 'section', text: { type: 'mrkdwn', text: 'Not collapsible, `width: wide`.' } }]
+      }
+    ]
+  }
+};
+
+export const DataVisualizationPie: Story = {
+  name: 'Data visualization (pie)',
+  args: {
+    blocks: [
+      {
+        type: 'data_visualization',
+        title: 'My Favorite Candy Bars',
+        chart: {
+          type: 'pie',
+          segments: [
+            { label: 'Kit Kat', value: 45 },
+            { label: 'Twix', value: 28 },
+            { label: 'Crunch', value: 18 },
+            { label: 'Milky Way', value: 9 }
+          ]
+        }
+      }
+    ]
+  }
+};
+
+export const DataVisualizationBar: Story = {
+  name: 'Data visualization (bar)',
+  args: {
+    blocks: [
+      {
+        type: 'data_visualization',
+        title: 'Pies by Tastiness',
+        chart: {
+          type: 'bar',
+          series: [
+            {
+              name: 'Pies',
+              data: [
+                { label: 'Rhubarb', value: 85 },
+                { label: 'Pumpkin', value: 70 },
+                { label: 'Lemon', value: 72 },
+                { label: 'Blueberry', value: 90 },
+                { label: 'Key Lime', value: 56 }
+              ]
+            }
+          ],
+          axis_config: {
+            categories: ['Rhubarb', 'Pumpkin', 'Lemon', 'Blueberry', 'Key Lime'],
+            x_label: 'Pies',
+            y_label: 'Tastiness (%)'
+          }
+        }
+      }
+    ]
+  }
+};
+
+export const DataVisualizationArea: Story = {
+  name: 'Data visualization (area)',
+  args: {
+    blocks: [
+      {
+        type: 'data_visualization',
+        title: 'Daily Active Users',
+        chart: {
+          type: 'area',
+          series: [
+            {
+              name: 'Free tier',
+              data: [
+                { label: 'Mon', value: 12000 },
+                { label: 'Tue', value: 13500 },
+                { label: 'Wed', value: 15200 },
+                { label: 'Thu', value: 14800 },
+                { label: 'Fri', value: 16400 }
+              ]
+            },
+            {
+              name: 'Paid tier',
+              data: [
+                { label: 'Mon', value: 4500 },
+                { label: 'Tue', value: 4800 },
+                { label: 'Wed', value: 5100 },
+                { label: 'Thu', value: 5600 },
+                { label: 'Fri', value: 6200 }
+              ]
+            }
+          ],
+          axis_config: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], x_label: 'Day', y_label: 'Users' }
+        }
+      }
+    ]
+  }
+};
+
+export const DataVisualizationLine: Story = {
+  name: 'Data visualization (line)',
+  args: {
+    blocks: [
+      {
+        type: 'data_visualization',
+        title: 'Weekly Paper Sales',
+        chart: {
+          type: 'line',
+          series: [
+            {
+              name: 'Website',
+              data: [
+                { label: 'Week 1', value: 32000 },
+                { label: 'Week 2', value: 35000 },
+                { label: 'Week 3', value: 29000 },
+                { label: 'Week 4', value: 41000 },
+                { label: 'Week 5', value: 45000 }
+              ]
+            },
+            {
+              name: 'In-store',
+              data: [
+                { label: 'Week 1', value: 21000 },
+                { label: 'Week 2', value: 19000 },
+                { label: 'Week 3', value: 24000 },
+                { label: 'Week 4', value: 22000 },
+                { label: 'Week 5', value: 27000 }
+              ]
+            }
+          ],
+          axis_config: {
+            categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'],
+            x_label: 'Week',
+            y_label: 'Sales (USD)'
+          }
+        }
+      }
+    ]
+  }
+};
+
+// `data_table` and `raw_number` cells aren't in slack-blocks-to-jsx's `Block`
+// union yet — the addon translates them itself (see src/normalize.ts).
+export const DataTable: Story = {
+  args: {
+    blocks: [
+      {
+        type: 'data_table',
+        caption: 'Top community members this week',
+        page_size: 4,
+        rows: [
+          [
+            { type: 'raw_text', text: 'Member' },
+            { type: 'raw_text', text: 'Badge' },
+            { type: 'raw_text', text: 'Posts' },
+            { type: 'raw_text', text: 'Replies' }
+          ],
+          [
+            { type: 'raw_text', text: 'Alice Chen' },
+            {
+              type: 'rich_text',
+              elements: [
+                { type: 'rich_text_section', elements: [{ type: 'text', text: 'Champion', style: { bold: true } }] }
+              ]
+            },
+            { type: 'raw_number', value: 42, text: '42' },
+            { type: 'raw_number', value: 118, text: '118' }
+          ],
+          [
+            { type: 'raw_text', text: 'Bob Okafor' },
+            { type: 'raw_text', text: 'Helper' },
+            { type: 'raw_number', value: 31, text: '31' },
+            { type: 'raw_number', value: 96, text: '96' }
+          ],
+          [
+            { type: 'raw_text', text: 'Carla Diaz' },
+            {
+              type: 'rich_text',
+              elements: [
+                { type: 'rich_text_section', elements: [{ type: 'text', text: 'Rising', style: { italic: true } }] }
+              ]
+            },
+            { type: 'raw_number', value: 18, text: '18' },
+            { type: 'raw_number', value: 1204, text: '1,204' }
+          ],
+          [
+            { type: 'raw_text', text: 'Dev Patel' },
+            { type: 'raw_text', text: 'Helper' },
+            { type: 'raw_number', value: 12, text: '12' },
+            { type: 'raw_number', value: 40, text: '40' }
+          ],
+          [
+            { type: 'raw_text', text: 'Eve Martin' },
+            { type: 'raw_text', text: '—' },
+            { type: 'raw_number', value: 7, text: '7' },
+            { type: 'raw_number', value: 22, text: '22' }
+          ]
+        ]
+      }
+    ] as unknown as Block[]
   }
 };
 
