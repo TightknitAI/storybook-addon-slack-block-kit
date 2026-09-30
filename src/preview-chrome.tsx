@@ -1,8 +1,9 @@
-import type { ValidationResult } from '@tightknitai/slack-block-kit-validator';
 import { useState } from 'react';
 import type { Block } from 'slack-blocks-to-jsx';
 import { buildBlockKitBuilderUrl } from './builder-url';
+import { SURFACE_LABELS } from './envelope';
 import type { SlackInteractionPayload, SlackPreviewSurface } from './types';
+import type { SurfaceValidationResult } from './validate';
 
 interface ChromeColors {
   bg: string;
@@ -74,17 +75,38 @@ export function PreviewToolbar({ blocks, surface, colors, fontFamily }: ToolbarP
 }
 
 interface ValidationBannerProps {
-  result: ValidationResult;
+  result: SurfaceValidationResult;
   colors: ChromeColors;
   fontFamily: string;
+}
+
+function ErrorGroup({ heading, errors }: { heading: string | null; errors: string[] }) {
+  if (errors.length === 0) return null;
+  return (
+    <>
+      {heading ? <div style={{ marginTop: 6, fontWeight: 600 }}>{heading}</div> : null}
+      <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
+        {errors.map((err) => (
+          <li key={err} style={{ marginTop: 2 }}>
+            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 }}>{err}</code>
+          </li>
+        ))}
+      </ul>
+    </>
+  );
 }
 
 /**
  * Inline validation banner. Shows above the preview when the validator
  * returns issues. Green when valid; red when not. Wrapping `<details>`
  * keeps the surface area small until the consumer wants to dig in.
+ *
+ * Surface-compatibility findings get their own group ("Won't render on
+ * App Home") because the preview still draws those blocks — the banner is
+ * the only place that says Slack wouldn't.
  */
 export function ValidationBanner({ result, colors: _colors, fontFamily }: ValidationBannerProps) {
+  const label = SURFACE_LABELS[result.surface];
   if (result.valid) {
     return (
       <div
@@ -99,10 +121,13 @@ export function ValidationBanner({ result, colors: _colors, fontFamily }: Valida
           borderRadius: 4
         }}
       >
-        ✓ Valid Block Kit payload
+        ✓ Valid Block Kit payload for {label}
       </div>
     );
   }
+
+  const { surfaceErrors, otherErrors } = result;
+  const grouped = surfaceErrors.length > 0 && otherErrors.length > 0;
 
   return (
     <details
@@ -118,15 +143,11 @@ export function ValidationBanner({ result, colors: _colors, fontFamily }: Valida
       }}
     >
       <summary style={{ cursor: 'pointer', fontWeight: 600 }}>
-        ✗ {result.errors.length} validation {result.errors.length === 1 ? 'issue' : 'issues'}
+        ✗ {result.errors.length} validation {result.errors.length === 1 ? 'issue' : 'issues'} for {label}
+        {surfaceErrors.length > 0 ? ` — ${surfaceErrors.length} won't render on this surface` : null}
       </summary>
-      <ul style={{ margin: '6px 0 0 16px', padding: 0 }}>
-        {result.errors.map((err) => (
-          <li key={err} style={{ marginTop: 2 }}>
-            <code style={{ background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 }}>{err}</code>
-          </li>
-        ))}
-      </ul>
+      <ErrorGroup heading={surfaceErrors.length > 0 ? `Won't render on ${label}` : null} errors={surfaceErrors} />
+      <ErrorGroup heading={grouped ? 'Other issues' : null} errors={otherErrors} />
     </details>
   );
 }

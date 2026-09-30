@@ -22,7 +22,7 @@ const meta = {
   parameters: { layout: 'padded', slackBlocks: false },
   argTypes: {
     theme: { control: { type: 'inline-radio' }, options: ['light', 'dark'] },
-    surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'app_home'] }
+    surface: { control: { type: 'inline-radio' }, options: ['message', 'modal', 'home'] }
   }
 } satisfies Meta<typeof SlackPreview>;
 
@@ -252,6 +252,8 @@ export const Table: Story = {
 
 export const Alert: Story = {
   args: {
+    // Alert blocks only render in modals.
+    surface: 'modal',
     blocks: [
       { type: 'alert', text: { type: 'mrkdwn', text: 'Build *#4821* passed on `main`.' }, level: 'success' },
       { type: 'alert', text: { type: 'mrkdwn', text: 'Cache hit rate dropped to 41%.' }, level: 'info' },
@@ -361,8 +363,7 @@ export const ContextActions: Story = {
         ]
       }
     ]
-  },
-  parameters: { surface: 'message' }
+  }
 };
 
 export const Input: Story = {

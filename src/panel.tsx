@@ -1,7 +1,8 @@
 import { createElement as h, useMemo, useState } from 'react';
-import { useArgs, useGlobals, useParameter } from 'storybook/manager-api';
+import { useArgs, useGlobals, useParameter, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { buildBlockKitBuilderUrl } from './builder-url';
 import { GLOBAL_SURFACE_KEY, PARAM_KEY } from './constants';
+import { SURFACE_LABELS } from './envelope';
 import { sanitizeBlockUrls } from './sanitize';
 import type { SlackBlocksParameter, SlackBlocksParameterObject, SlackPreviewSurface } from './types';
 import { validateForSurface } from './validate';
@@ -16,6 +17,51 @@ function coerce(
   }
   if (Array.isArray(param)) return { blocks: param };
   return param;
+}
+
+const SURFACES: readonly SlackPreviewSurface[] = ['message', 'modal', 'home'];
+
+/**
+ * Mirrors the decorator's resolution so the panel reports on the same
+ * payload the preview draws:
+ *  - `slackBlocks` set → that.
+ *  - unset → `args.blocks` (the decorator's auto-fallback).
+ *  - `false` → the story opted out of the decorator because its own
+ *    component draws the preview from args (e.g. the `SlackPreview`
+ *    catalog), so report on `args.blocks` with that component's
+ *    `surface` / `validate` args.
+ */
+function resolve(
+  param: SlackBlocksParameter | null,
+  args: Record<string, unknown> | undefined
+): SlackBlocksParameterObject | null {
+  if (param !== false) {
+    const fromParam = coerce(param, args);
+    if (fromParam) return fromParam;
+  }
+  const blocks = args?.blocks;
+  if (!Array.isArray(blocks)) return null;
+  if (param !== false) return { blocks: blocks as SlackBlocksParameterObject['blocks'] };
+  const surface = SURFACES.find((s) => s === args?.surface);
+  return {
+    blocks: blocks as SlackBlocksParameterObject['blocks'],
+    ...(surface ? { surface } : {}),
+    ...(args?.validate === false ? { validate: false } : {})
+  };
+}
+
+function errorList(errors: string[]) {
+  return h(
+    'ul',
+    { style: { margin: 0, paddingLeft: 20 } },
+    errors.map((err) =>
+      h(
+        'li',
+        { key: err, style: { marginTop: 2 } },
+        h('code', { style: { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 } }, err)
+      )
+    )
+  );
 }
 
 const btnStyle: React.CSSProperties = {
@@ -56,13 +102,19 @@ const btnStyle: React.CSSProperties = {
  * See AGENTS.md → "Known risks → Manager-side rendering" for follow-up.
  */
 export function Panel() {
-  const raw = useParameter<SlackBlocksParameter | null>(PARAM_KEY, null);
+  const param = useParameter<SlackBlocksParameter | null>(PARAM_KEY, null);
+  // `useParameter` keeps the panel subscribed to story changes, but the
+  // manager API hands back `param || undefined`, so a `slackBlocks: false`
+  // opt-out arrives as "unset". Read the raw value to tell them apart.
+  const api = useStorybookApi();
+  const { storyId, refId } = useStorybookState();
+  const raw = api.getParameters(refId ? { storyId, refId } : storyId, PARAM_KEY) === false ? false : param;
   const [args] = useArgs();
   const [globals] = useGlobals();
   const surface = (globals[GLOBAL_SURFACE_KEY] as SlackPreviewSurface | undefined) ?? 'message';
   const [copied, setCopied] = useState(false);
 
-  const normalized = useMemo(() => coerce(raw, args as Record<string, unknown> | undefined), [raw, args]);
+  const normalized = useMemo(() => resolve(raw, args as Record<string, unknown> | undefined), [raw, args]);
   const effectiveSurface = normalized?.surface ?? surface;
 
   // Same allowlist the renderer applies, so the panel validates, copies
@@ -201,25 +253,32 @@ export function Panel() {
               h(
                 'div',
                 { style: { fontWeight: 600, marginBottom: 6 } },
-                `✗ ${validation.errors.length} validation ${validation.errors.length === 1 ? 'issue' : 'issues'}`
+                `✗ ${validation.errors.length} validation ${validation.errors.length === 1 ? 'issue' : 'issues'} for the `,
+                h('code', null, effectiveSurface),
+                ' surface'
               ),
-              h(
-                'ul',
-                { style: { margin: 0, paddingLeft: 20 } },
-                validation.errors.map((err) =>
-                  h(
-                    'li',
-                    { key: err, style: { marginTop: 2 } },
+              validation.surfaceErrors.length > 0
+                ? h(
+                    'div',
+                    { style: { marginBottom: validation.otherErrors.length > 0 ? 8 : 0 } },
                     h(
-                      'code',
-                      {
-                        style: { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 }
-                      },
-                      err
-                    )
+                      'div',
+                      { style: { fontWeight: 600, marginBottom: 4 } },
+                      `Won't render on ${SURFACE_LABELS[effectiveSurface]} — the preview still draws these, Slack won't`
+                    ),
+                    errorList(validation.surfaceErrors)
                   )
-                )
-              )
+                : null,
+              validation.otherErrors.length > 0
+                ? h(
+                    'div',
+                    null,
+                    validation.surfaceErrors.length > 0
+                      ? h('div', { style: { fontWeight: 600, marginBottom: 4 } }, 'Other issues')
+                      : null,
+                    errorList(validation.otherErrors)
+                  )
+                : null
             )
       )
     : null;

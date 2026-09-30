@@ -119,6 +119,56 @@ export function safeLinkHooks(hooks?: SlackPreviewHooks): SlackPreviewHooks {
   return { ...hooks, link };
 }
 
+// Block types `slack-blocks-to-jsx@1.1.x` has a renderer for. Anything
+// else — `data_table` today, or a type Slack ships later — makes the
+// library return `null` and the block vanishes without a trace. Revisit
+// this list when bumping `slack-blocks-to-jsx`.
+const RENDERABLE_BLOCK_TYPES = new Set([
+  'actions',
+  'alert',
+  'card',
+  'carousel',
+  'container',
+  'context',
+  'context_actions',
+  'data_visualization',
+  'divider',
+  'file',
+  'header',
+  'image',
+  'input',
+  'markdown',
+  'plan',
+  'rich_text',
+  'section',
+  'table',
+  'task_card',
+  'video'
+]);
+
+/**
+ * Swaps top-level blocks the renderer can't draw for a context line naming
+ * the missing type, so the preview says "this is here, I just can't show
+ * it" instead of silently dropping it. Render-only: validation, Copy JSON
+ * and the Builder link still see the original payload.
+ */
+export function withUnrenderedPlaceholders(blocks: Block[]): Block[] {
+  if (blocks.every((block) => RENDERABLE_BLOCK_TYPES.has((block as { type?: string })?.type ?? ''))) return blocks;
+  return blocks.map((block) => {
+    const type = (block as { type?: string })?.type;
+    if (type && RENDERABLE_BLOCK_TYPES.has(type)) return block;
+    return {
+      type: 'context',
+      elements: [
+        {
+          type: 'mrkdwn',
+          text: `:warning: \`${type ?? 'unknown'}\` block — not supported by the preview renderer, so it isn't drawn here.`
+        }
+      ]
+    } as Block;
+  });
+}
+
 interface SurfaceBodyProps {
   blocks: Block[];
   theme: SlackPreviewTheme;
@@ -184,6 +234,7 @@ export function Renderer({
     [blocks, surface, validate]
   );
   const interactions = useMemo(() => extractInteractions(blocks), [blocks]);
+  const drawnBlocks = useMemo(() => withUnrenderedPlaceholders(blocks), [blocks]);
 
   const canvas = CANVAS[theme];
   const chrome = (body: React.ReactNode) => (
@@ -235,7 +286,7 @@ export function Renderer({
           Modal title
         </div>
         <div style={{ padding: 16 }}>
-          <SurfaceBody blocks={blocks} theme={theme} hooks={hooks} />
+          <SurfaceBody blocks={drawnBlocks} theme={theme} hooks={hooks} />
         </div>
         <div
           style={{
@@ -312,7 +363,7 @@ export function Renderer({
           <div style={{ ...tabBase, color: c.muted }}>About</div>
         </div>
         <div style={{ padding: 16 }}>
-          <SurfaceBody blocks={blocks} theme={theme} hooks={hooks} />
+          <SurfaceBody blocks={drawnBlocks} theme={theme} hooks={hooks} />
         </div>
       </div>
     );
@@ -337,7 +388,7 @@ export function Renderer({
           name={name}
           logo={logo}
           theme={theme}
-          blocks={blocks}
+          blocks={drawnBlocks}
           hooks={hooks as Record<string, unknown> | undefined}
         />
       </div>

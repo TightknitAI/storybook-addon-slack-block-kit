@@ -52,6 +52,65 @@ export const TableOnModalSurface: Story = {
   }
 };
 
+const nameInput = {
+  type: 'input',
+  label: { type: 'plain_text', text: 'Name' },
+  element: { type: 'plain_text_input', action_id: 'name' }
+};
+
+const fileInput = {
+  type: 'input',
+  label: { type: 'plain_text', text: 'Attachments' },
+  element: { type: 'file_input', action_id: 'files' }
+};
+
+// The stories below pin `surface` so each one shows its verdict without
+// touching the toolbar. The preview still draws every block — Slack's
+// surface rules only show up in the banner / panel.
+
+export const InputFormOnModal: Story = {
+  args: { note: 'Input blocks in a modal — valid. The modal envelope carries `submit`, as Slack requires.' },
+  parameters: {
+    slackBlocks: { surface: 'modal', blocks: [nameInput, fileInput] }
+  }
+};
+
+export const FileInputOnAppHome: Story = {
+  args: { note: '`file_input` only works in modals — flagged under "Won\'t render on App Home".' },
+  parameters: {
+    slackBlocks: { surface: 'home', blocks: [nameInput, fileInput] }
+  }
+};
+
+export const AlertOnMessage: Story = {
+  args: { note: 'Alert blocks are modal-only — flagged on the message surface.' },
+  parameters: {
+    slackBlocks: {
+      surface: 'message',
+      blocks: [{ type: 'alert', level: 'warning', text: { type: 'mrkdwn', text: 'Heads up' } }]
+    }
+  }
+};
+
+export const MarkdownOnModal: Story = {
+  args: { note: 'Markdown blocks are message-only — flagged on the modal surface.' },
+  parameters: {
+    slackBlocks: { surface: 'modal', blocks: [{ type: 'markdown', text: '**Bold** and _italic_' }] }
+  }
+};
+
+export const SurfaceAndSchemaErrors: Story = {
+  args: {
+    note: "A malformed section plus an App Home–incompatible block. Both show up, grouped separately — the schema error doesn't hide the surface one."
+  },
+  parameters: {
+    slackBlocks: {
+      surface: 'home',
+      blocks: [{ type: 'section' }, { type: 'markdown', text: 'Only in messages' }]
+    }
+  }
+};
+
 export const ButtonTextTooLong: Story = {
   args: { note: 'Button text > 75 chars — schema catches the maxLength.' },
   parameters: {
