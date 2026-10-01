@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { Block } from 'slack-blocks-to-jsx';
 import { buildBlockKitBuilderUrl } from './builder-url';
 import { SURFACE_LABELS } from './envelope';
-import type { SlackInteractionPayload, SlackPreviewSurface } from './types';
+import type { SlackEnvelopeOptions, SlackInteractionPayload, SlackPreviewSurface } from './types';
 import type { SurfaceValidationResult } from './validate';
 
 interface ChromeColors {
@@ -20,6 +20,7 @@ interface ChromeTextStyle {
 interface ToolbarProps {
   blocks: Block[];
   surface: SlackPreviewSurface;
+  modal?: SlackEnvelopeOptions['modal'];
   colors: ChromeColors;
   fontFamily: string;
 }
@@ -29,7 +30,7 @@ interface ToolbarProps {
  * Block Kit Builder". Designed to be flat and unobtrusive so it doesn't
  * compete with the rendered Slack chrome.
  */
-export function PreviewToolbar({ blocks, surface, colors, fontFamily }: ToolbarProps) {
+export function PreviewToolbar({ blocks, surface, modal, colors, fontFamily }: ToolbarProps) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = () => {
@@ -44,7 +45,7 @@ export function PreviewToolbar({ blocks, surface, colors, fontFamily }: ToolbarP
       });
   };
 
-  const builderHref = buildBlockKitBuilderUrl(blocks, surface);
+  const builderHref = buildBlockKitBuilderUrl(blocks, surface, modal);
 
   const btn = {
     padding: '4px 10px',

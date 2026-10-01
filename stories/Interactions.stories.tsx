@@ -2,15 +2,12 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { SlackInteractionPayload } from '../src/types';
 
 /**
- * Demonstrates the interaction simulator. Every preview lists the
- * interactive elements it found (buttons, selects, datepickers, etc.)
- * with a "Simulate" button per row. Clicking Simulate fires
- * `parameters.slackBlocks.onInteraction(payload)` with the same shape
- * Slack would post to your `interactivity_endpoint`.
- *
- * Open the browser console while clicking — the addon also `console.log`s
- * every fired interaction so you can copy the payload into a handler
- * test without re-typing.
+ * Demonstrates interactions. Click a button in the preview, or open the
+ * Slack Block Kit panel, which lists every interactive element it found
+ * (buttons, selects, datepickers, etc.) with a "Simulate" button per row.
+ * Either fires `parameters.slackBlocks.onInteraction(payload)` with the
+ * same shape Slack would post to your `interactivity_endpoint`, and logs
+ * the payload to the Actions panel so you can copy it into a handler test.
  */
 function HostNote({ note }: { note: string }) {
   return <p style={{ fontFamily: 'system-ui, sans-serif', color: '#374151', maxWidth: 480 }}>{note}</p>;
@@ -36,7 +33,9 @@ const log = (p: SlackInteractionPayload) => {
 };
 
 export const ButtonsAndSelect: Story = {
-  args: { note: 'Three interactive elements — simulate each from the panel below.' },
+  args: {
+    note: 'Three interactive elements — click the buttons, or simulate any of them from the Slack Block Kit panel.'
+  },
   parameters: {
     slackBlocks: {
       onInteraction: log,

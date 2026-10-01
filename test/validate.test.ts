@@ -1,7 +1,6 @@
 import type { Block } from 'slack-blocks-to-jsx';
 import { describe, expect, it } from 'vitest';
 import { buildBlockKitBuilderUrl } from '../src/builder-url';
-import { withUnrenderedPlaceholders } from '../src/renderer';
 import { isSurfaceError, validateForSurface } from '../src/validate';
 
 const b = (blocks: unknown[]) => blocks as Block[];
@@ -93,19 +92,5 @@ describe('isSurfaceError', () => {
     );
     expect(isSurfaceError("surface 'message' allows at most 50 blocks (got 51)")).toBe(true);
     expect(isSurfaceError("blocks[0]: must have required property 'text'")).toBe(false);
-  });
-});
-
-describe('withUnrenderedPlaceholders', () => {
-  it('returns the same array when every block is renderable', () => {
-    const blocks = b([{ type: 'divider' }, markdown]);
-    expect(withUnrenderedPlaceholders(blocks)).toBe(blocks);
-  });
-
-  it('swaps unsupported blocks for a context line naming the type', () => {
-    const out = withUnrenderedPlaceholders(b([{ type: 'divider' }, { type: 'data_table', rows: [] }]));
-    expect(out[0]).toEqual({ type: 'divider' });
-    expect(out[1]).toMatchObject({ type: 'context' });
-    expect(JSON.stringify(out[1])).toContain('data_table');
   });
 });

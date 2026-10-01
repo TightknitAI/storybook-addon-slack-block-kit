@@ -151,8 +151,9 @@ describe('no unsafe URL reaches the DOM', () => {
     expect(html).toContain('Click me');
   });
 
+  // The addon panel always lists them; `chrome` also puts the notice inline.
   it('reports what it removed instead of silently changing the payload', () => {
-    const html = render([{ type: 'image', image_url: XSS, alt_text: 'cat' }]);
+    const html = render([{ type: 'image', image_url: XSS, alt_text: 'cat' }], { chrome: true });
     expect(html).toContain('1 unsafe URL removed');
     expect(html).toContain('javascript:alert(document.domain)');
   });

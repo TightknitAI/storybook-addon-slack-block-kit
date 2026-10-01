@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
  * Home / Messages / About tab strip Slack shows for installed apps.
  * Surface-compatibility is enforced by
  * `@tightknitai/slack-block-kit-validator`, so misusing one of those here
- * shows up under "Won't render on App Home" in the banner and panel.
+ * shows up under "Won't render on App Home" in the addon panel.
  */
 function HostNote({ note }: { note: string }) {
   return <p style={{ fontFamily: 'system-ui, sans-serif', color: '#374151', maxWidth: 480 }}>{note}</p>;

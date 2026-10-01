@@ -1,6 +1,6 @@
 import type { Block } from 'slack-blocks-to-jsx';
 import { wrapForSurface } from './envelope';
-import type { SlackPreviewSurface } from './types';
+import type { SlackEnvelopeOptions, SlackPreviewSurface } from './types';
 
 /**
  * Builds a Block Kit Builder URL that opens the given blocks pre-filled.
@@ -12,7 +12,11 @@ import type { SlackPreviewSurface } from './types';
  * just round-trips the payload into Slack's hosted editor. No data leaves
  * the user's browser until they click.
  */
-export function buildBlockKitBuilderUrl(blocks: Block[], surface: SlackPreviewSurface): string {
-  const payload = wrapForSurface(blocks, surface);
+export function buildBlockKitBuilderUrl(
+  blocks: Block[],
+  surface: SlackPreviewSurface,
+  modal?: SlackEnvelopeOptions['modal']
+): string {
+  const payload = wrapForSurface(blocks, surface, modal);
   return `https://app.slack.com/block-kit-builder#${encodeURIComponent(JSON.stringify(payload))}`;
 }

@@ -68,7 +68,22 @@ function pushFrom(block: Record<string, unknown>, el: ElementLike, out: SlackInt
  */
 export function extractInteractions(blocks: Block[]): SlackInteractionPayload[] {
   const out: SlackInteractionPayload[] = [];
-  for (const block of blocks as Array<Record<string, unknown>>) {
+  collect(blocks as Array<Record<string, unknown>>, out);
+  return out;
+}
+
+function collect(blocks: Array<Record<string, unknown>>, out: SlackInteractionPayload[]): void {
+  for (const block of blocks) {
+    // `container` nests whole blocks; `carousel` nests `card` blocks.
+    if (block.type === 'container' && Array.isArray(block.child_blocks)) {
+      collect(block.child_blocks as Array<Record<string, unknown>>, out);
+    }
+    if (block.type === 'carousel' && Array.isArray(block.elements)) {
+      collect(block.elements as Array<Record<string, unknown>>, out);
+    }
+    if (block.type === 'card' && Array.isArray(block.actions)) {
+      for (const el of block.actions as ElementLike[]) pushFrom(block, el, out);
+    }
     if (block.type === 'actions' && Array.isArray(block.elements)) {
       for (const el of block.elements as ElementLike[]) pushFrom(block, el, out);
     }
@@ -82,5 +97,25 @@ export function extractInteractions(blocks: Block[]): SlackInteractionPayload[] 
       for (const el of block.elements as ElementLike[]) pushFrom(block, el, out);
     }
   }
-  return out;
+}
+
+// Elements whose rendered DOM is a single <button> labelled with the
+// element's `text` — the ones a click on the canvas can be traced back to.
+const CLICKABLE_TYPES = new Set(['button', 'workflow_button']);
+
+/**
+ * Maps a click on the rendered preview back to the payload it stands for.
+ * `slack-blocks-to-jsx` doesn't carry `action_id`s into the DOM, so the
+ * button's visible label is all there is to go on: the match only counts
+ * when exactly one button in the payload has that label. Selects, pickers
+ * and ambiguous labels stay reachable through the panel's Simulate list.
+ */
+export function matchClickedLabel(
+  interactions: SlackInteractionPayload[],
+  label: string
+): SlackInteractionPayload | undefined {
+  const text = label.trim();
+  if (!text) return undefined;
+  const hits = interactions.filter((i) => CLICKABLE_TYPES.has(i.type) && i.label?.trim() === text);
+  return hits.length === 1 ? hits[0] : undefined;
 }

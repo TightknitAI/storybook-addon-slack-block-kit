@@ -6,7 +6,7 @@ import {
 } from '@tightknitai/slack-block-kit-validator';
 import type { Block } from 'slack-blocks-to-jsx';
 import { wrapForSurface } from './envelope';
-import type { SlackPreviewSurface } from './types';
+import type { SlackEnvelopeOptions, SlackPreviewSurface } from './types';
 
 /**
  * Validation result split by kind, so the UI can tell "Slack won't accept
@@ -34,10 +34,11 @@ export function isSurfaceError(message: string): boolean {
  * Validates blocks the way Slack will see them on the given surface.
  *
  * `modal` / `home` wrap the blocks in the matching view envelope (see
- * `wrapForSurface`); `message` validates the bare array with
- * `surface: 'message'`. The validator applies its surface-compatibility
- * rules from there — which blocks each surface accepts, `file_input`
- * outside modals, the 50-block message cap. The full rule set lives in
+ * `wrapForSurface`, which also takes the story's modal title / submit /
+ * close); `message` validates the bare array with `surface: 'message'`.
+ * The validator applies its surface-compatibility rules from there — which
+ * blocks each surface accepts, `file_input` outside modals, the 50-block
+ * message cap. The full rule set lives in
  * `@tightknitai/slack-block-kit-validator`, not here.
  *
  * The validator skips its surface checks when the schema rejects the
@@ -45,10 +46,14 @@ export function isSurfaceError(message: string): boolean {
  * unrelated typo. So whenever the payload is invalid, the surface check
  * is re-run directly and its findings merged in.
  */
-export function validateForSurface(blocks: Block[], surface: SlackPreviewSurface): SurfaceValidationResult {
+export function validateForSurface(
+  blocks: Block[],
+  surface: SlackPreviewSurface,
+  modal: SlackEnvelopeOptions['modal'] = {}
+): SurfaceValidationResult {
   const options: ValidateBlockKitOptions =
     surface === 'message' ? { target: 'blocks', surface: 'message' } : { target: surface };
-  const input = surface === 'message' ? blocks : wrapForSurface(blocks, surface);
+  const input = surface === 'message' ? blocks : wrapForSurface(blocks, surface, modal);
   const result = validateBlockKit(input, options);
 
   const errors = [...result.errors];
