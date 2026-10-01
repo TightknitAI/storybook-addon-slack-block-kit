@@ -13,7 +13,7 @@ Read this before doing anything destructive. The user scaffolded this repo in a 
 | Decorator (`withSlackPreview`) | ✅ working | Preview-side. Renders below the story when `parameters.slackBlocks` is set, or derives blocks from a function form / `args.blocks`. |
 | Toolbar globals (theme + surface) | ✅ working | Wired via `preview.ts`'s `globalTypes`. Surface dropdown covers `Message`, `Modal`, and `App Home`. |
 | Renderer (`Renderer`) | ✅ working | Blocks always render inside a real surface — `message` (full envelope: avatar / name / timestamp), `modal` (title bar + Cancel/Submit footer), or `home` (Home / Messages / About tab strip). No bare option. |
-| Validation report | ✅ working | Wraps `@tightknitai/slack-block-kit-validator`. Full structured report in the addon panel; the panel's tab title carries the issue count. The inline green/red banner only draws with `chrome: true`. The validator has no transitive `emojilib` dep, so the panel runs fine manager-side. |
+| Validation report | ✅ working | Wraps `@tightknitai/slack-block-kit-validator`. Full structured report in the addon panel; the panel's tab title carries the issue count. Surface-compatibility findings are grouped separately ("Won't render on App Home") and are reported even when the schema also fails. The inline green/red banner only draws with `chrome: true`. The validator has no transitive `emojilib` dep, so the panel runs fine manager-side. |
 | Interactions | ✅ working | `src/interactions.ts` walks the blocks (including container / card / carousel children) for interactive elements. The panel lists them with a "Simulate" button that emits `EVENT_SIMULATE` to the preview; clicking a rendered button fires too (matched by its unique label — the library puts no `action_id` in the DOM). Both call `onInteraction` and log to the Actions panel. |
 | Args-driven blocks | ✅ working | `parameters.slackBlocks` accepts a function `(args) => Block[] \| { blocks, ... }` so Storybook Controls drive the preview live. |
 | Copy as JSON / Open in Block Kit Builder | ✅ working | In the panel (and above the preview with `chrome: true`). The Builder URL wraps the payload in the correct surface envelope (`{type:'modal',blocks}`, `{type:'home',blocks}`, or bare `{blocks}`). |
@@ -133,6 +133,7 @@ storybook-addon-slack-block-kit/
 │   ├── resolve.ts                  ← resolveParameter — one parameter→object resolver shared by decorator and panel
 │   ├── normalize.ts                ← normalizeForRender — data_table → table, placeholder for unknown block types
 │   ├── validate.ts                 ← validateForSurface — surface→target adapter over @tightknitai/slack-block-kit-validator
+│   ├── envelope.ts                 ← wrapForSurface (per-surface payload envelope, shared by validate + builder-url) + SURFACE_LABELS
 │   ├── sanitize.ts                 ← isSafeUrl / sanitizeBlockUrls — URL scheme allowlist applied before every render
 │   ├── builder-url.ts              ← buildBlockKitBuilderUrl — wraps blocks in the surface-appropriate envelope and URL-encodes
 │   ├── interactions.ts             ← extractInteractions — walks blocks for interactive elements (buttons/selects/etc.)

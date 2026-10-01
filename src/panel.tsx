@@ -2,6 +2,7 @@ import { createElement as h, useMemo, useState } from 'react';
 import { useArgs, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
 import { buildBlockKitBuilderUrl } from './builder-url';
 import { EVENT_SIMULATE, GLOBAL_SURFACE_KEY, PARAM_KEY } from './constants';
+import { SURFACE_LABELS } from './envelope';
 import { extractInteractions } from './interactions';
 import { resolveParameter } from './resolve';
 import { sanitizeBlockUrls } from './sanitize';
@@ -21,6 +22,14 @@ const btnStyle: React.CSSProperties = {
 };
 
 const codeStyle: React.CSSProperties = { background: 'rgba(0,0,0,0.05)', padding: '0 4px', borderRadius: 3 };
+
+function errorList(errors: string[]) {
+  return h(
+    'ul',
+    { style: { margin: 0, paddingLeft: 20 } },
+    errors.map((err) => h('li', { key: err, style: { marginTop: 2 } }, h('code', { style: codeStyle }, err)))
+  );
+}
 
 /**
  * The current story's payload as the panel sees it: resolved the same way
@@ -192,7 +201,7 @@ export function Panel() {
       h(
         'a',
         {
-          href: buildBlockKitBuilderUrl(blocks, effectiveSurface),
+          href: buildBlockKitBuilderUrl(blocks, effectiveSurface, normalized.modal),
           target: '_blank',
           rel: 'noopener noreferrer',
           style: btnStyle
@@ -238,15 +247,34 @@ export function Panel() {
               h(
                 'div',
                 { style: { fontWeight: 600, marginBottom: 6 } },
-                `✗ ${validation.errors.length} validation ${validation.errors.length === 1 ? 'issue' : 'issues'}`
+                `✗ ${validation.errors.length} validation ${validation.errors.length === 1 ? 'issue' : 'issues'} for the `,
+                h('code', null, effectiveSurface),
+                ' surface'
               ),
-              h(
-                'ul',
-                { style: { margin: 0, paddingLeft: 20 } },
-                validation.errors.map((err) =>
-                  h('li', { key: err, style: { marginTop: 2 } }, h('code', { style: codeStyle }, err))
-                )
-              )
+              // Surface findings get their own group: the canvas still draws
+              // those blocks, so this is the only place that says Slack won't.
+              validation.surfaceErrors.length > 0
+                ? h(
+                    'div',
+                    { style: { marginBottom: validation.otherErrors.length > 0 ? 8 : 0 } },
+                    h(
+                      'div',
+                      { style: { fontWeight: 600, marginBottom: 4 } },
+                      `Won't render on ${SURFACE_LABELS[effectiveSurface]} — the preview still draws these, Slack won't`
+                    ),
+                    errorList(validation.surfaceErrors)
+                  )
+                : null,
+              validation.otherErrors.length > 0
+                ? h(
+                    'div',
+                    null,
+                    validation.surfaceErrors.length > 0
+                      ? h('div', { style: { fontWeight: 600, marginBottom: 4 } }, 'Other issues')
+                      : null,
+                    errorList(validation.otherErrors)
+                  )
+                : null
             )
       )
     : null;
