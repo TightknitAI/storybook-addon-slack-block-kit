@@ -113,5 +113,10 @@
       "react"
     ],
     "icon": "https://avatars.githubusercontent.com/u/192043297"
+  },
+  "pnpm": {
+    "overrides": {
+      "undici@>=7.0.0 <7.29.1": ">=7.29.1 <8.0.0"
+    }
   }
 }
