@@ -15,7 +15,7 @@ import { Panel, PanelTitle } from './panel';
  * calls for JSX without putting `React` in scope — which crashes at panel
  * mount. Calling `createElement` explicitly sidesteps the transform
  * entirely. `src/panel.tsx` follows the same convention for the same
- * reason. The published tsup build, by contrast, uses the automatic JSX
+ * reason. The published tsdown build, by contrast, uses the automatic JSX
  * runtime, so consumers never see this.
  *
  * Toolbar globals are NOT registered here — they live in `preview.ts`'s
