@@ -83,9 +83,9 @@ import { useParameter } from 'storybook/manager-api';
 
 These resolved against `storybook@10.4.0` at scaffold time. If a future minor bump renames them, check `node_modules/storybook/package.json` `exports` for the new subpaths.
 
-### 4. Preset entry resolution
+### 4. Preset must stay empty (duplicate preview import)
 
-`src/preset.ts` uses `import.meta.url` + `fileURLToPath` to compute `__dirname` and joins to `manager.js` / `preview.js`. tsup produces both ESM and CJS; the ESM build uses `import.meta.url` natively, CJS gets tsup's `__dirname` shim. If Storybook's loader can't find entries, check `dist/preset.js` and `dist/preset.cjs` after build.
+Storybook 10 auto-loads an addon's `./manager` and `./preview` exports when the package `exports` map declares them (see `resolveAddonName` in `storybook/dist/_node-chunks`). It then also runs `./preset`. So `src/preset.ts` is deliberately empty: if it re-adds `dist/manager.js` / `dist/preview.js` via `managerEntries` / `previewAnnotations`, the generated `virtual:/@storybook/builder-vite/project-annotations.js` imports `dist/preview.js` twice and every consumer story dies with `Identifier 'preview_<hash>' has already been declared`. The dogfood Storybook never shows this because it loads `src/` through `.storybook/local-preset.ts`, not the package `exports` — so smoke-test the packed tarball in a fresh consumer whenever you touch `exports`, `src/preset.ts`, or the build entries.
 
 ### 5. CSS scope coupling
 
@@ -141,7 +141,7 @@ storybook-addon-slack-block-kit/
 │   ├── blocks.tsx                  ← SlackPreview — MDX doc block (re-exports Renderer)
 │   ├── manager.tsx                 ← addons.register + addons.add panel
 │   ├── preview.ts                  ← decorators + globalTypes + initialGlobals
-│   ├── preset.ts                   ← managerEntries + previewAnnotations
+│   ├── preset.ts                   ← intentionally empty; Storybook auto-loads ./manager + ./preview (see #4)
 │   └── index.ts                    ← public exports
 └── stories/
     ├── Decorator.stories.tsx       ← 4 stories incl. dark-pinned + no-blocks empty state
@@ -162,7 +162,7 @@ storybook-addon-slack-block-kit/
 - **Don't** push to GitHub or create a remote repo without confirming the URL.
 - **Do** run `pnpm storybook` as the first proof of life; the static build already passes.
 - **Do** prioritize fixing Known risks #1 + #2 (the emojilib resolution) for v1 — they unblock the panel and MDX.
-- **Do** keep `src/preset.ts` and `.storybook/local-preset.ts` in lock-step.
+- **Do** keep `src/preset.ts` empty and leave `.storybook/local-preset.ts` wiring `src/` — they intentionally differ (see Known risks #4). If you add a new manager/preview entry, add it to the package `exports` map for consumers and to `local-preset.ts` for the dogfood.
 
 ## Roadmap
 
