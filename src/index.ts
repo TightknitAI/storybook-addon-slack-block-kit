@@ -33,4 +33,5 @@ export type {
   SlackPreviewTheme,
   ValidationResult
 } from './types';
-export { validateForSurface } from './validate';
+export type { SurfaceValidationResult } from './validate';
+export { isSurfaceError, validateForSurface } from './validate';
