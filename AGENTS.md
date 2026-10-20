@@ -85,7 +85,7 @@ These resolved against `storybook@10.4.0` at scaffold time. If a future minor bu
 
 ### 4. Preset entry resolution
 
-`src/preset.ts` uses `import.meta.url` + `fileURLToPath` to compute `__dirname` and joins to `manager.js` / `preview.js`. tsup produces both ESM and CJS; the ESM build uses `import.meta.url` natively, CJS gets tsup's `__dirname` shim. If Storybook's loader can't find entries, check `dist/preset.js` and `dist/preset.cjs` after build.
+`src/preset.ts` uses `import.meta.url` + `fileURLToPath` to compute `__dirname` and joins to `manager.js` / `preview.js`. tsdown produces both ESM and CJS; the ESM build uses `import.meta.url` natively, and CJS gets tsdown's `import.meta.url` shim (`shims: true` in `tsdown.config.ts`). If Storybook's loader can't find entries, check `dist/preset.js` and `dist/preset.cjs` after build.
 
 ### 5. CSS scope coupling
 
@@ -117,7 +117,7 @@ storybook-addon-slack-block-kit/
 ├── LICENSE                         ← MIT
 ├── package.json                    ← exports map: . / preview / manager / preset / package.json
 ├── tsconfig.json
-├── tsup.config.ts                  ← 4 entries → dist/{index,preview,manager,preset}.{js,cjs,d.ts}
+├── tsdown.config.ts                ← 4 entries → dist/{index,preview,manager,preset}.{js,cjs,d.ts,d.cts}
 ├── biome.json
 ├── .gitignore
 ├── .storybook/

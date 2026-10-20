@@ -8,12 +8,12 @@ import { fileURLToPath } from 'node:url';
  * manager/preview bundles.
  *
  * The paths are resolved relative to *this* compiled file's location
- * (i.e. `dist/preset.js`), so they line up with tsup's output siblings
+ * (i.e. `dist/preset.js`), so they line up with the build's output siblings
  * `dist/manager.js` and `dist/preview.js`.
  *
  * Storybook 10 loads the ESM build via the package `exports` map; the
- * matching dist/preset.cjs handles legacy CJS consumers via tsup's
- * `__dirname` shim.
+ * matching dist/preset.cjs handles legacy CJS consumers via tsdown's
+ * `import.meta.url` shim.
  */
 const here = dirname(fileURLToPath(import.meta.url));
 

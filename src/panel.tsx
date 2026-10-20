@@ -101,7 +101,7 @@ export function PanelTitle() {
  * **Why this file uses `createElement` (`h`) directly instead of JSX**:
  * the Storybook 10 manager bundle externalizes `react` as `__REACT__` but
  * its esbuild emits classic `React.createElement(…)` calls without
- * `React` in scope, which crashes on mount. The published tsup build
+ * `React` in scope, which crashes on mount. The published tsdown build
  * uses the automatic JSX runtime so consumers never see this; only the
  * dogfood path (and any other consumer loading source through Storybook's
  * manager esbuild) hits it.

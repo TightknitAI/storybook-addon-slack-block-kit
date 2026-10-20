@@ -19,8 +19,10 @@ const config: StorybookConfig = {
   // stories/DocBlock.mdx is preserved as a reference for the public API.
   stories: ['../stories/**/*.stories.@(ts|tsx)'],
   addons: ['@storybook/addon-docs', './local-preset.ts'],
+  // `react-docgen` parses source on its own; `react-docgen-typescript` needs
+  // the TypeScript compiler API, which TypeScript 7 no longer ships.
   typescript: {
-    reactDocgen: 'react-docgen-typescript'
+    reactDocgen: 'react-docgen'
   },
   viteFinal: (viteConfig) =>
     mergeConfig(viteConfig, {
