@@ -38,9 +38,9 @@
     "**/*.css"
   ],
   "scripts": {
-    "build": "tsup",
-    "build:clean": "rm -rf dist && pnpm run build",
-    "dev": "tsup --watch",
+    "build": "rm -rf dist && tsdown",
+    "build:clean": "pnpm run build",
+    "dev": "tsdown --watch",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -76,8 +76,8 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "storybook": "^10.4.0",
-    "tsup": "^8.3.5",
-    "typescript": "^6.0.3",
+    "tsdown": "^0.23.1",
+    "typescript": "^7.0.2",
     "vite": "^8.0.13",
     "vitest": "^4.1.6",
     "wrangler": "^4.0.0"
