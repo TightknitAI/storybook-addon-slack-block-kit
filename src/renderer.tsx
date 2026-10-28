@@ -233,7 +233,9 @@ export function Renderer({
     );
     return (
       <div style={{ fontFamily: FONT_STACK, maxWidth: frameWidth }}>
-        {chrome ? <PreviewToolbar blocks={blocks} surface={surface} colors={c} fontFamily={FONT_STACK} /> : null}
+        {chrome ? (
+          <PreviewToolbar blocks={blocks} surface={surface} modal={modal} colors={c} fontFamily={FONT_STACK} />
+        ) : null}
         {validation ? <ValidationBanner result={validation} colors={c} fontFamily={FONT_STACK} /> : null}
         {chrome ? <UnsafeUrlNotice removed={removed} fontFamily={FONT_STACK} /> : null}
         {surfaceNode}
