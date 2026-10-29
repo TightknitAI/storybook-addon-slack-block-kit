@@ -216,7 +216,7 @@ Note that this protects the *preview*. Blocks you send to Slack should be valida
 ```bash
 pnpm install
 pnpm storybook    # dogfood: opens this repo's own stories at :6007
-pnpm build        # tsup → dist/ (index, preview, manager, preset)
+pnpm build        # tsdown → dist/ (index, preview, manager, preset)
 pnpm typecheck
 pnpm lint
 pnpm test
