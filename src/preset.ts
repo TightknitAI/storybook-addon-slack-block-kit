@@ -1,25 +1,14 @@
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 /**
- * Storybook preset entry. `managerEntries` wires the manager-side
- * registration (the panel) and `previewAnnotations` wires the preview-side
- * decorator + global types. Storybook calls these as it builds its merged
- * manager/preview bundles.
+ * Storybook preset entry — intentionally empty.
  *
- * The paths are resolved relative to *this* compiled file's location
- * (i.e. `dist/preset.js`), so they line up with the build's output siblings
- * `dist/manager.js` and `dist/preview.js`.
+ * Storybook 10 auto-loads an addon's `./manager` and `./preview` exports
+ * when the package `exports` map declares them, which ours does. Adding
+ * `dist/manager.js` / `dist/preview.js` again here via `managerEntries` /
+ * `previewAnnotations` makes Storybook import them twice, and the preview
+ * iframe dies with `Identifier 'preview_<hash>' has already been declared`.
  *
- * Storybook 10 loads the ESM build via the package `exports` map; the
- * matching dist/preset.cjs handles legacy CJS consumers via tsdown's
- * `import.meta.url` shim.
+ * The `./preset` export stays so anyone who points at it directly keeps
+ * resolving a module. The dogfood Storybook loads `src/` through
+ * `.storybook/local-preset.ts` instead, which still needs its entries.
  */
-const here = dirname(fileURLToPath(import.meta.url));
-
-export const managerEntries = async (entry: string[] = []): Promise<string[]> => [...entry, join(here, 'manager.js')];
-
-export const previewAnnotations = async (entry: string[] = []): Promise<string[]> => [
-  ...entry,
-  join(here, 'preview.js')
-];
+export {};

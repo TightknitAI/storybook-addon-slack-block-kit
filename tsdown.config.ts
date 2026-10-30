@@ -29,8 +29,8 @@ export default defineConfig(
     ([name, file]): UserConfig => ({
       entry: { [name]: file },
       format: ['esm', 'cjs'],
-      // Keep the dist/*.{js,cjs,d.ts,d.cts} names that the `exports` map and
-      // `preset.ts`'s `managerEntries` / `previewAnnotations` point at.
+      // Keep the dist/*.{js,cjs,d.ts,d.cts} names that the `exports` map
+      // points at.
       fixedExtension: false,
       dts: true,
       target: 'es2022',
@@ -40,7 +40,9 @@ export default defineConfig(
       // script does that before tsdown starts.
       clean: false,
       treeshake: true,
-      // Gives the CJS build an `import.meta.url` shim for `preset.ts`.
+      // Gives the CJS build an `import.meta.url` shim. No entry uses it today
+      // (`preset.ts` is empty, see AGENTS.md Known risk #4); it stays so a
+      // future Node-side entry keeps working under CJS.
       shims: true,
       hooks: {
         'build:done': ({ options }) => stripCssFromDts(options.outDir, name)
