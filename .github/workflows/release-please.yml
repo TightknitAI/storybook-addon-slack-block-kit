@@ -12,9 +12,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      id-token: write
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
     steps:
       - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
         id: release
@@ -22,6 +23,18 @@ jobs:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
+  # Publishes in its own job so only these steps hold the OIDC publish token,
+  # and through the `npm` environment, which only main can deploy to.
+  publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.releases_created == 'true' }}
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
       # Publish is inlined here (not a separate workflow on release:created)
       # because GitHub does not trigger downstream workflows from events
       # authored by the default GITHUB_TOKEN — release-please-action's
@@ -32,22 +45,18 @@ jobs:
       # mode; the singular `release_created` only exists in non-manifest
       # mode and would silently skip every step here.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
+        with:
+          persist-credentials: false
 
       - uses: ./.github/actions/setup
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
 
       - run: pnpm run lint
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
 
       - run: pnpm run typecheck
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
 
       - run: pnpm test
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
 
       - run: pnpm run build:clean
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
 
       # Trusted Publisher (OIDC) needs npm CLI >= 11.5.1; Node 22 ships
       # with npm 10.x. Run the modern CLI via `npx` from its separate
@@ -62,7 +71,6 @@ jobs:
       # line, so bump it by hand. Stay on 11.x: npm 12 raises the Node
       # floor to ^22.22.2, which `node-version: 22` does not guarantee.
       - name: Publish to npm
-        if: ${{ steps.release.outputs.releases_created == 'true' }}
         env:
           NPM_CLI_VERSION: 11.19.1
         run: |
